@@ -157,7 +157,7 @@ for rep, max_val in LIMITI.items():
 st.sidebar.divider()
 st.sidebar.subheader("📁 Caricamento File")
 file_caricato = st.sidebar.file_uploader("1. Listone Principale (.xlsx/.csv)", type=["xlsx", "csv"])
-file_titolarita = st.sidebar.file_uploader("2. File Note / Titolarità / Fasce / Rigoristi", type=["xlsx", "csv"], help="Excel con colonne: Nome, Titolarità (1-5), Fascia (TOP/TERZA/ecc.), Rigorista")
+file_titolarita = st.sidebar.file_uploader("2. File Note / Titolarità / Fasce / Rigoristi")scia (TOP/TERZA/ecc.), Rigorista")
 
 tab_asta, tab_rosa, tab_moduli = st.tabs(["🔍 Listone A-Z & Asta", "📋 La Mia Rosa", "🧩 Analizzatore Moduli Mantra"])
 
