@@ -48,7 +48,6 @@ def carica_backup():
         except Exception:
             pass
 
-# Carica il backup all'avvio dell'app
 carica_backup()
 
 if 'rosa' not in st.session_state:
@@ -142,6 +141,53 @@ def get_reparto(rm_str):
             return reparto
     return 'Altri'
 
+# --- FUNZIONE LETTURA AUTOMATICA FILE ---
+def leggi_file_intelligente(sorgente):
+    is_xlsx = getattr(sorgente, "name", str(sorgente)).lower().endswith('.xlsx')
+    for h in [1, 0, 2]:
+        try:
+            if is_xlsx:
+                df_temp = pd.read_excel(sorgente, header=h)
+            else:
+                df_temp = pd.read_csv(sorgente, header=h)
+            cols = [str(c).lower().strip() for c in df_temp.columns]
+            if any(k in cols for k in ['nome', 'calciatore', 'rm', 'r']):
+                return df_temp
+        except Exception:
+            continue
+    return None
+
+def carica_df_principale(file_caricato_user):
+    if file_caricato_user is not None:
+        return leggi_file_intelligente(file_caricato_user)
+    
+    possibili_nomi = [
+        "Quotazioni_Fantacalcio_Stagione_2026_27.xlsx",
+        "Quotazioni_Fantacalcio_Stagione_2026_27.csv",
+        "Quotazioni_Fantacalcio_Stagione_2026_27",
+        "Listone.xlsx", "Quotazioni.xlsx", "listone.xlsx", "quotazioni.xlsx",
+        "Listone.csv", "Quotazioni.csv", "listone.csv", "quotazioni.csv"
+    ]
+    
+    for nome in possibili_nomi:
+        if os.path.exists(nome):
+            df_loc = leggi_file_intelligente(nome)
+            if df_loc is not None:
+                return df_loc
+
+    # Scansione dinamica per trovare qualsiasi file che inizi con "Quotazioni" o "Listone"
+    try:
+        for f in os.listdir("."):
+            f_lower = f.lower()
+            if (f_lower.startswith("quotazioni") or f_lower.startswith("listone")) and (f_lower.endswith(".xlsx") or f_lower.endswith(".csv")):
+                df_loc = leggi_file_intelligente(f)
+                if df_loc is not None:
+                    return df_loc
+    except Exception:
+        pass
+
+    return None
+
 LIMITI = {
     'Portieri': 4,
     'Difensori': 9,
@@ -202,49 +248,35 @@ for rep, max_val in LIMITI.items():
 
 st.sidebar.divider()
 st.sidebar.subheader("📁 Caricamento File (Opzionale)")
-file_caricato = st.sidebar.file_uploader("1. Listone Principale (.xlsx/.csv)", type=["xlsx", "csv"])
+file_caricato = st.sidebar.file_uploader("1. Listone / Quotazioni (.xlsx/.csv)", type=["xlsx", "csv"])
 file_titolarita = st.sidebar.file_uploader("2. File Note / Titolarità / Fasce", help="Excel con colonne: Nome, Titolarità (1-5), Fascia, Rigorista")
 
 tab_asta, tab_rosa, tab_moduli = st.tabs(["🔍 Listone A-Z & Asta", "📋 La Mia Rosa", "🧩 Analizzatore Moduli Mantra"])
 
-df = None
-
-if file_caricato is not None:
-    try:
-        if file_caricato.name.endswith('.xlsx'):
-            df = pd.read_excel(file_caricato, header=1)
-        else:
-            df = pd.read_csv(file_caricato)
-    except Exception as e:
-        st.sidebar.error(f"Errore nel caricamento del file: {e}")
-elif os.path.exists("Listone.xlsx"):
-    try:
-        df = pd.read_excel("Listone.xlsx", header=1)
-    except Exception as e:
-        st.sidebar.error(f"Errore nella lettura di Listone.xlsx: {e}")
+df = carica_df_principale(file_caricato)
 
 if df is not None:
     try:
         colonne = list(df.columns)
         
-        nome_col = next((c for c in colonne if c.lower() in ['nome', 'calciatore']), 'Nome')
-        r_col = next((c for c in colonne if c.upper() == 'R'), 'R')
-        rm_col = next((c for c in colonne if c.upper() == 'RM'), 'RM')
-        squadra_col = next((c for c in colonne if c.lower() in ['squadra', 'club']), 'Squadra')
+        nome_col = next((c for c in colonne if str(c).lower() in ['nome', 'calciatore']), 'Nome')
+        r_col = next((c for c in colonne if str(c).upper() == 'R'), 'R')
+        rm_col = next((c for c in colonne if str(c).upper() == 'RM'), 'RM')
+        squadra_col = next((c for c in colonne if str(c).lower() in ['squadra', 'club']), 'Squadra')
         
         valore_col = None
         for target in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm', 'prezzo medio', 'pm']:
-            trovato = next((c for c in colonne if c.lower() == target), None)
+            trovato = next((c for c in colonne if str(c).lower() == target), None)
             if trovato:
                 valore_col = trovato
                 break
 
         if not valore_col:
-            valore_col = next((c for c in colonne if c.lower() in ['qt.a m', 'qt.a', 'quotazione']), None)
+            valore_col = next((c for c in colonne if str(c).lower() in ['qt.a m', 'qt.a', 'quotazione']), None)
 
-        tit_col = next((c for c in colonne if c.lower() in ['titolarità', 'titolarita', 'tit', 'status']), None)
-        fascia_col = next((c for c in colonne if c.lower() in ['fascia', 'fasce', 'tier']), None)
-        rig_col = next((c for c in colonne if c.lower() in ['rigorista', 'rigoristi', 'rig']), None)
+        tit_col = next((c for c in colonne if str(c).lower() in ['titolarità', 'titolarita', 'tit', 'status']), None)
+        fascia_col = next((c for c in colonne if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+        rig_col = next((c for c in colonne if str(c).lower() in ['rigorista', 'rigoristi', 'rig']), None)
 
         df_tit = None
         if file_titolarita is not None:
@@ -254,18 +286,18 @@ if df is not None:
                 else:
                     df_tit = pd.read_csv(file_titolarita)
             except Exception as ex_tit:
-                st.sidebar.error(f"Errore nel file caricato: {ex_tit}")
+                st.sidebar.error(f"Errore nel file titolarità: {ex_tit}")
         elif os.path.exists("FASCE_TIT_RIG.xlsx"):
             df_tit = pd.read_excel("FASCE_TIT_RIG.xlsx")
 
         if df_tit is not None:
             try:
                 df_tit.columns = [str(c).strip() for c in df_tit.columns]
-                col_tit_nome = next((c for c in df_tit.columns if c.lower() in ['nome', 'calciatore']), df_tit.columns[0])
+                col_tit_nome = next((c for c in df_tit.columns if str(c).lower() in ['nome', 'calciatore']), df_tit.columns[0])
                 
-                col_tit_val = next((c for c in df_tit.columns if c.lower() in ['titolarità', 'titolarita', 'tit', 'status', 'voto']), None)
-                col_fascia_val = next((c for c in df_tit.columns if c.lower() in ['fascia', 'fasce', 'tier']), None)
-                col_rig_val = next((c for c in df_tit.columns if c.lower() in ['rigorista', 'rigoristi', 'rig']), None)
+                col_tit_val = next((c for c in df_tit.columns if str(c).lower() in ['titolarità', 'titolarita', 'tit', 'status', 'voto']), None)
+                col_fascia_val = next((c for c in df_tit.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+                col_rig_val = next((c for c in df_tit.columns if str(c).lower() in ['rigorista', 'rigoristi', 'rig']), None)
 
                 cols_to_use = [col_tit_nome]
                 if col_tit_val: cols_to_use.append(col_tit_val)
@@ -313,7 +345,7 @@ if df is not None:
         if rig_col and rig_col in df.columns:
             df[rig_col] = df[rig_col].apply(normalizza_rigorista_breve)
 
-        qta_col = next((c for c in df.columns if c.lower() in ['qt.a m', 'qt.a', 'quotazione']), None)
+        qta_col = next((c for c in df.columns if str(c).lower() in ['qt.a m', 'qt.a', 'quotazione']), None)
 
         colonne_desiderate = [nome_col, squadra_col, rm_col, 'Stato', valore_col, qta_col, tit_col, fascia_col, rig_col]
         cols_order = []
@@ -466,6 +498,7 @@ if df is not None:
         st.error(f"Errore nella lettura del file: {e}")
 
 else:
-    st.info("👈 Carica il file del Listone dalla barra laterale per iniziare l'asta!")
+    st.warning("⚠️ Nessun file quotazioni trovato automaticamente nella cartella.")
+    st.info("Assicurati che il file `Quotazioni_Fantacalcio_Stagione_2026_27.xlsx` sia stato caricato su GitHub nella stessa cartella di `app.py`.")
 
 salva_backup()
