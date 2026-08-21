@@ -194,14 +194,26 @@ file_titolarita = st.sidebar.file_uploader("2. File Note / Titolarità / Fasce /
 
 tab_asta, tab_rosa, tab_moduli = st.tabs(["🔍 Listone A-Z & Asta", "📋 La Mia Rosa", "🧩 Analizzatore Moduli Mantra"])
 
+df = None
+
+# 1. Se hai caricato un file a mano dall'app, usa quello
 if file_caricato is not None:
     try:
         if file_caricato.name.endswith('.xlsx'):
             df = pd.read_excel(file_caricato, header=1)
         else:
             df = pd.read_csv(file_caricato)
+    except Exception as e:
+        st.sidebar.error(f"Errore nel caricamento del file: {e}")
 
-        df.columns = [str(col).strip() for col in df.columns]
+# 2. Altrimenti, carica in automatico il file Listone.xlsx da GitHub!
+elif os.path.exists("Listone.xlsx"):
+    try:
+        df = pd.read_excel("Listone.xlsx", header=1)
+    except Exception as e:
+        st.sidebar.error(f"Errore nella lettura di Listone.xlsx: {e}")
+
+if df is not None:
         colonne = list(df.columns)
         
         nome_col = next((c for c in colonne if c.lower() in ['nome', 'calciatore']), 'Nome')
