@@ -7,6 +7,17 @@ import os
 st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 
 # ==========================================
+# 🛡️ PROTEZIONE MOBILE: BLOCCO PULL-TO-REFRESH
+# ==========================================
+st.markdown("""
+    <style>
+    html, body, [data-testid="stAppViewContainer"] {
+        overscroll-behavior-y: contain !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ==========================================
 # 💾 GESTIONE BACKUP E SALVATAGGIO AUTOMATICO
 # ==========================================
 FILE_BACKUP = "backup_asta.json"
@@ -65,7 +76,7 @@ if not st.session_state.autenticato:
     if st.button("🔓 Accedi all'App", type="primary"):
         if pwd_input == PASSWORD_CORRETTA:
             st.session_state.autenticato = True
-            salva_backup()  # 👈 Salva lo sblocco nel backup permanente!
+            salva_backup()
             st.success("Accesso autorizzato!")
             st.rerun()
         else:
@@ -73,6 +84,9 @@ if not st.session_state.autenticato:
     
     st.stop()
 
+# ==========================================
+# ⚽ APPLICAZIONE FANTA COPILOT
+# ==========================================
 MAPPA_REPARTI = {
     'Portieri': ['POR', 'P'],
     'Difensori': ['DD', 'DS', 'DC', 'B'],
@@ -82,7 +96,6 @@ MAPPA_REPARTI = {
 
 LISTA_RUOLI_MANTRA = ["Tutti", "POR", "DD", "DS", "DC", "B", "E", "M", "C", "W", "T", "A", "PC"]
 
-# DIZIONARI DI CONVERSIONE Dati -> Tabella / Scheda
 MAPPA_TITOLARITA = {
     1: "🔴 1 - Non gioca mai",
     2: "🔴 2 - Subentra raramente",
@@ -143,21 +156,21 @@ for p in st.session_state.rosa:
     if rep in reparti_count:
         reparti_count[rep] += 1
 
-# CALCOLO INFLAZIONE / DEFLAZIONE MERCATO
-tot_fvm_uscite = sum(v['FVM'] for v in st.session_state.tutti_venduti if v['FVM'] > 0)
+tot_fvm_uscite = sum(v['FVM'] for v in st.session_state.tutti_venduti if v.get('FVM', 0) > 0)
 tot_spesa_uscite = sum(v['Prezzo'] for v in st.session_state.tutti_venduti)
 coeff_inflazione = (tot_spesa_uscite / tot_fvm_uscite) if tot_fvm_uscite > 0 else 1.0
 
-# --- INTESTAZIONE APP ---
+# --- INTESTAZIONE ---
 col_head1, col_head2 = st.columns([4, 1])
 with col_head1:
     st.title("⚽ Fanta Copilot - Dashboard Mantra 2026/27")
 with col_head2:
     if st.button("🔒 Esci / Blocco App"):
         st.session_state.autenticato = False
+        salva_backup()
         st.rerun()
 
-# --- BARRA LATERALE ---
+# --- SIDEBAR ---
 st.sidebar.header("⚙️ Configurazione Asta")
 
 budget_iniziale = st.sidebar.number_input("Budget iniziale:", value=1000, step=10)
@@ -188,15 +201,14 @@ for rep, max_val in LIMITI.items():
     st.sidebar.progress(min(curr / max_val, 1.0))
 
 st.sidebar.divider()
-st.sidebar.subheader("📁 Caricamento File")
+st.sidebar.subheader("📁 Caricamento File (Opzionale)")
 file_caricato = st.sidebar.file_uploader("1. Listone Principale (.xlsx/.csv)", type=["xlsx", "csv"])
-file_titolarita = st.sidebar.file_uploader("2. File Note / Titolarità / Fasce / Rigoristi", help="Excel con colonne: Nome, Titolarità (1-5), Fascia, Rigorista")
+file_titolarita = st.sidebar.file_uploader("2. File Note / Titolarità / Fasce", help="Excel con colonne: Nome, Titolarità (1-5), Fascia, Rigorista")
 
 tab_asta, tab_rosa, tab_moduli = st.tabs(["🔍 Listone A-Z & Asta", "📋 La Mia Rosa", "🧩 Analizzatore Moduli Mantra"])
 
 df = None
 
-# 1. Se hai caricato un file a mano dall'app, usa quello
 if file_caricato is not None:
     try:
         if file_caricato.name.endswith('.xlsx'):
@@ -205,8 +217,6 @@ if file_caricato is not None:
             df = pd.read_csv(file_caricato)
     except Exception as e:
         st.sidebar.error(f"Errore nel caricamento del file: {e}")
-
-# 2. Altrimenti, carica in automatico il file Listone.xlsx da GitHub!
 elif os.path.exists("Listone.xlsx"):
     try:
         df = pd.read_excel("Listone.xlsx", header=1)
@@ -214,6 +224,7 @@ elif os.path.exists("Listone.xlsx"):
         st.sidebar.error(f"Errore nella lettura di Listone.xlsx: {e}")
 
 if df is not None:
+    try:
         colonne = list(df.columns)
         
         nome_col = next((c for c in colonne if c.lower() in ['nome', 'calciatore']), 'Nome')
@@ -221,7 +232,6 @@ if df is not None:
         rm_col = next((c for c in colonne if c.upper() == 'RM'), 'RM')
         squadra_col = next((c for c in colonne if c.lower() in ['squadra', 'club']), 'Squadra')
         
-        # Cerca dando priorità ASSOLUTA a FVM M (Mantra) rispetto a FVM classico
         valore_col = None
         for target in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm', 'prezzo medio', 'pm']:
             trovato = next((c for c in colonne if c.lower() == target), None)
@@ -236,7 +246,6 @@ if df is not None:
         fascia_col = next((c for c in colonne if c.lower() in ['fascia', 'fasce', 'tier']), None)
         rig_col = next((c for c in colonne if c.lower() in ['rigorista', 'rigoristi', 'rig']), None)
 
-       # UNIONE SECONDO FILE (TITOLARITÀ, FASCE, RIGORISTI)
         df_tit = None
         if file_titolarita is not None:
             try:
@@ -247,7 +256,6 @@ if df is not None:
             except Exception as ex_tit:
                 st.sidebar.error(f"Errore nel file caricato: {ex_tit}")
         elif os.path.exists("FASCE_TIT_RIG.xlsx"):
-            # Se non carichi nulla a mano, usa in automatico il file presente su GitHub!
             df_tit = pd.read_excel("FASCE_TIT_RIG.xlsx")
 
         if df_tit is not None:
@@ -296,7 +304,6 @@ if df is not None:
 
         df['Stato'] = df[nome_col].apply(calcola_stato)
 
-        # Pulizia e formattazione per la TABELLA
         if tit_col and tit_col in df.columns:
             df[tit_col] = pd.to_numeric(df[tit_col], errors='coerce').fillna(0).astype(int)
 
@@ -306,7 +313,6 @@ if df is not None:
         if rig_col and rig_col in df.columns:
             df[rig_col] = df[rig_col].apply(normalizza_rigorista_breve)
 
-       # Selezione e ordinamento esatto delle colonne richieste
         qta_col = next((c for c in df.columns if c.lower() in ['qt.a m', 'qt.a', 'quotazione']), None)
 
         colonne_desiderate = [nome_col, squadra_col, rm_col, 'Stato', valore_col, qta_col, tit_col, fascia_col, rig_col]
@@ -335,18 +341,15 @@ if df is not None:
 
             df_filtrato = df.copy() if mostra_anche_venduti else df_disponibili.copy()
 
-            # Filtro 1: Macro Reparto
             if macro_reparto != "Tutti" and rm_col in df_filtrato.columns:
                 ruoli_target = MAPPA_REPARTI[macro_reparto]
                 pattern_reparto = r'\b(' + '|'.join(ruoli_target) + r')\b'
                 df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(pattern_reparto, case=False, regex=True, na=False)]
 
-            # Filtro 2: Ruolo Mantra Specifico (es. DD, DC, E...)
             if ruolo_specifico != "Tutti" and rm_col in df_filtrato.columns:
                 pattern_ruolo = r'\b' + re.escape(ruolo_specifico) + r'\b'
                 df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(pattern_ruolo, case=False, regex=True, na=False)]
 
-            # Filtro 3: Ricerca per Testo
             if cerca_nome and nome_col in df_filtrato.columns:
                 mask_nome = df_filtrato[nome_col].astype(str).str.contains(cerca_nome, case=False, na=False)
                 mask_rm = df_filtrato[rm_col].astype(str).str.contains(cerca_nome, case=False, na=False) if rm_col in df_filtrato.columns else False
@@ -378,7 +381,6 @@ if df is not None:
                     prezzo_stimato = max(1, round(valore_base * coeff_inflazione))
                     rep_g = get_reparto(g_rm)
                     
-                    # DECODIFICA DATI PER SCHEDA ESTESA
                     num_tit = int(info_g[tit_col]) if (tit_col and pd.notna(info_g[tit_col])) else 0
                     testo_titolarita = MAPPA_TITOLARITA.get(num_tit, "❓ Non specificata")
 
