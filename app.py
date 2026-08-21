@@ -464,4 +464,6 @@ if file_caricato is not None:
         st.error(f"Errore nella lettura del file: {e}")
 
 else:
-    st.info("👈 Carica il file del listone nella barra laterale per iniziare.")
+    st.info("👈 Carica il file del Listone dalla barra laterale per iniziare l'asta!")
+
+salva_backup()
