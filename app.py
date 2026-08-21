@@ -176,7 +176,14 @@ if file_caricato is not None:
         rm_col = next((c for c in colonne if c.upper() == 'RM'), 'RM')
         squadra_col = next((c for c in colonne if c.lower() in ['squadra', 'club']), 'Squadra')
         
-        valore_col = next((c for c in colonne if c.lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm', 'prezzo medio', 'pm']), None)
+        # Cerca dando priorità ASSOLUTA a FVM M (Mantra) rispetto a FVM classico
+        valore_col = None
+        for target in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm', 'prezzo medio', 'pm']:
+            trovato = next((c for c in colonne if c.lower() == target), None)
+            if trovato:
+                valore_col = trovato
+                break
+
         if not valore_col:
             valore_col = next((c for c in colonne if c.lower() in ['qt.a m', 'qt.a', 'quotazione']), None)
 
