@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
-
+import os
 st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 
 # ==========================================
@@ -184,14 +184,22 @@ if file_caricato is not None:
         fascia_col = next((c for c in colonne if c.lower() in ['fascia', 'fasce', 'tier']), None)
         rig_col = next((c for c in colonne if c.lower() in ['rigorista', 'rigoristi', 'rig']), None)
 
-        # UNIONE SECONDO FILE (TITOLARITÀ, FASCE, RIGORISTI)
+       # UNIONE SECONDO FILE (TITOLARITÀ, FASCE, RIGORISTI)
+        df_tit = None
         if file_titolarita is not None:
             try:
                 if file_titolarita.name.endswith('.xlsx'):
                     df_tit = pd.read_excel(file_titolarita)
                 else:
                     df_tit = pd.read_csv(file_titolarita)
-                
+            except Exception as ex_tit:
+                st.sidebar.error(f"Errore nel file caricato: {ex_tit}")
+        elif os.path.exists("FASCE_TIT_RIG.xlsx"):
+            # Se non carichi nulla a mano, usa in automatico il file presente su GitHub!
+            df_tit = pd.read_excel("FASCE_TIT_RIG.xlsx")
+
+        if df_tit is not None:
+            try:
                 df_tit.columns = [str(c).strip() for c in df_tit.columns]
                 col_tit_nome = next((c for c in df_tit.columns if c.lower() in ['nome', 'calciatore']), df_tit.columns[0])
                 
@@ -222,7 +230,7 @@ if file_caricato is not None:
                 if 'Rigorista' in df.columns: rig_col = 'Rigorista'
 
             except Exception as ex_tit:
-                st.sidebar.error(f"Errore nel file note/titolarità: {ex_tit}")
+                st.sidebar.error(f"Errore nella lettura note/titolarità: {ex_tit}")
 
         miei_nomi = {p['Nome']: p['Prezzo'] for p in st.session_state.rosa}
         venduti_dict = {v['Nome']: v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
