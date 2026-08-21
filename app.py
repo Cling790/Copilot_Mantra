@@ -254,13 +254,15 @@ if file_caricato is not None:
         if rig_col and rig_col in df.columns:
             df[rig_col] = df[rig_col].apply(normalizza_rigorista_breve)
 
-        # Ordine colonne: Stato, Tit, Fascia, Rigorista, Nome, restanti
-        cols_base = ['Stato']
-        if tit_col and tit_col in df.columns: cols_base.append(tit_col)
-        if fascia_col and fascia_col in df.columns: cols_base.append(fascia_col)
-        if rig_col and rig_col in df.columns: cols_base.append(rig_col)
-        
-        cols_order = cols_base + [c for c in df.columns if c not in cols_base]
+       # Selezione e ordinamento esatto delle colonne richieste
+        qta_col = next((c for c in df.columns if c.lower() in ['qt.a m', 'qt.a', 'quotazione']), None)
+
+        colonne_desiderate = [nome_col, squadra_col, rm_col, 'Stato', valore_col, qta_col, tit_col, fascia_col, rig_col]
+        cols_order = []
+        for c in colonne_desiderate:
+            if c and c in df.columns and c not in cols_order:
+                cols_order.append(c)
+
         df = df[cols_order].sort_values(by=nome_col, ascending=True)
 
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
