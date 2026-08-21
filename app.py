@@ -1,13 +1,67 @@
 import streamlit as st
 import pandas as pd
 import re
+import json
 import os
+
 st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
+
+# ==========================================
+# 🛡️ PROTEZIONE MOBILE: BLOCCO PULL-TO-REFRESH
+# ==========================================
+st.markdown("""
+    <style>
+    html, body, [data-testid="stAppViewContainer"] {
+        overscroll-behavior-y: contain !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# 💾 GESTIONE BACKUP E SALVATAGGIO AUTOMATICO
+# ==========================================
+FILE_BACKUP = "backup_asta.json"
+
+def salva_backup():
+    try:
+        dati = {
+            "rosa": st.session_state.get("rosa", []),
+            "tutti_venduti": st.session_state.get("tutti_venduti", [])
+        }
+        with open(FILE_BACKUP, "w", encoding="utf-8") as f:
+            json.dump(dati, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        pass
+
+def carica_backup():
+    if os.path.exists(FILE_BACKUP):
+        try:
+            with open(FILE_BACKUP, "r", encoding="utf-8") as f:
+                dati = json.load(f)
+                if 'rosa' not in st.session_state or not st.session_state.rosa:
+                    st.session_state.rosa = dati.get("rosa", [])
+                if 'tutti_venduti' not in st.session_state or not st.session_state.tutti_venduti:
+                    st.session_state.tutti_venduti = dati.get("tutti_venduti", [])
+        except Exception as e:
+            pass
+
+# Carica il backup all'avvio
+carica_backup()
+
+if 'rosa' not in st.session_state:
+    st.session_state.rosa = []
+
+if 'tutti_venduti' not in st.session_state:
+    st.session_state.tutti_venduti = []
 
 # ==========================================
 # 🔐 CONFIGURAZIONE SICUREZZA / ACCESSO
 # ==========================================
-PASSWORD_CORRETTA = "Pf703.d-s"  # <-- CAMBIA QUI LA TUA PASSWORD PERSONALE!
+PASSWORD_CORRETTA = "Pf703.d-s"
+
+# Verifica se l'utente si è già autenticato nell'URL (Query Params)
+if st.query_params.get("auth") == "ok":
+    st.session_state.autenticato = True
 
 if 'autenticato' not in st.session_state:
     st.session_state.autenticato = False
@@ -23,22 +77,13 @@ if not st.session_state.autenticato:
     if st.button("🔓 Accedi all'App", type="primary"):
         if pwd_input == PASSWORD_CORRETTA:
             st.session_state.autenticato = True
+            st.query_params["auth"] = "ok" # Memorizza l'accesso nell'URL
             st.success("Accesso autorizzato!")
             st.rerun()
         else:
-            st.error("❌ Password errata! Contatta l'amministratore per richiedere il codice di accesso.")
+            st.error("❌ Password errata!")
     
-    st.stop()  # FERMA L'ESECUZIONE DEL CODICE FINCHÉ NON SI È AUTENTICATI
-
-# ==========================================
-# ⚽ INIZIO APPLICAZIONE FANTA COPILOT
-# ==========================================
-
-if 'rosa' not in st.session_state:
-    st.session_state.rosa = []
-
-if 'tutti_venduti' not in st.session_state:
-    st.session_state.tutti_venduti = []
+    st.stop()
 
 MAPPA_REPARTI = {
     'Portieri': ['POR', 'P'],
