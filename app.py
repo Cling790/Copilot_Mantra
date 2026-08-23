@@ -321,7 +321,35 @@ for p in st.session_state.rosa:
 tot_fvm_uscite = sum(v['FVM'] for v in st.session_state.tutti_venduti if v.get('FVM', 0) > 0)
 tot_spesa_uscite = sum(v['Prezzo'] for v in st.session_state.tutti_venduti)
 coeff_inflazione = (tot_spesa_uscite / tot_fvm_uscite) if tot_fvm_uscite > 0 else 1.0
-
+def calcola_occasioni(df_completo, tutti_venduti):
+    nomi_venduti = set(v['Nome'] for v in tutti_venduti)
+    
+    # Prendiamo solo i giocatori "importanti" (es. FVM >= 12)
+    fvm_col = next((c for c in df_completo.columns if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm']), None)
+    if fvm_col:
+        df_top = df_completo[pd.to_numeric(df_completo[fvm_col], errors='coerce') >= 12].copy()
+    else:
+        df_top = df_completo.copy()
+        
+    occasioni_set = set()
+    rm_col = next((c for c in df_completo.columns if str(c).upper() == 'RM'), 'RM')
+    
+    for ruolo in LISTA_RUOLI_MANTRA[1:]:  # Escludiamo "Tutti"
+        df_ruolo = df_top[df_top[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo) + r'\b', case=False, na=False)]
+        tot_ruolo = len(df_ruolo)
+        
+        if tot_ruolo >= 3:
+            venduti_ruolo = df_ruolo[df_ruolo['Nome'].isin(nomi_venduti)]
+            percentuale_venduti = len(venduti_ruolo) / tot_ruolo
+            
+            # Se oltre il 60% dei top di quel ruolo è andato, i rimasti sono occasioni
+            if percentuale_venduti >= 0.60:
+                rimasti = df_ruolo[~df_ruolo['Nome'].isin(nomi_venduti)]
+                for n in rimasti['Nome']:
+                    occasioni_set.add(n)
+                    
+    return occasioni_set
+    
 # --- HEADER & SIDEBAR ---
 col_head1, col_head2 = st.columns([4, 1])
 with col_head1:
@@ -437,7 +465,28 @@ if df is not None:
                 df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(pattern_ruolo, case=False, regex=True, na=False)]
 
             if cerca_nome and nome_col in df_filtrato.columns:
-                df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.contains(cerca_nome, case=False, na=False)]
+                df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.contains(cerca_nome, case=False, na=False)]# ------------------------------------------
+        # 🔍 TAB 1: LISTONE A-Z & ASTA
+        # ------------------------------------------
+        with tab_asta:
+            set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
+            
+            col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns([2, 2, 2, 1, 1])
+            with col_f1:
+                macro_reparto = st.selectbox("🛡️ Reparto:", options=["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti/Attaccanti"])
+            with col_f2:
+                ruolo_specifico = st.selectbox("🎯 Ruolo Mantra:", options=LISTA_RUOLI_MANTRA)
+            with col_f3:
+                cerca_nome = st.text_input("🔎 Cerca Nome:")
+            with col_f4:
+                mostra_anche_venduti = st.checkbox("👁️ Mostra Venduti", value=False)
+            with col_f5:
+                solo_occasioni = st.checkbox("🔥 Solo Affari", value=False)
+
+            df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
+            
+            if solo_occasioni:
+                df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
 
             # ORDINAMENTO ALFABETICO A-Z
             if nome_col in df_filtrato.columns:
@@ -467,7 +516,8 @@ if df is not None:
                     tags_list.append("Rig")
                 if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
                     tags_list.extend([t.strip() for t in str(row[note_col]).split(',')])
-
+                if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
+                    tags_list.append("🔥 AFFARE")
                 tags_html = "".join([f'<span class="tag-pill">{t}</span> ' for t in tags_list])
                 col_bg = get_ruolo_colore(g_rm)
                 
