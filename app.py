@@ -443,32 +443,6 @@ if df is not None:
         # 🔍 TAB 1: LISTONE A-Z & ASTA
         # ------------------------------------------
         with tab_asta:
-            col_f1, col_f2, col_f3, col_f4 = st.columns([2, 2, 2, 1])
-            with col_f1:
-                macro_reparto = st.selectbox("🛡️ Reparto:", options=["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti/Attaccanti"])
-            with col_f2:
-                ruolo_specifico = st.selectbox("🎯 Ruolo Mantra:", options=LISTA_RUOLI_MANTRA)
-            with col_f3:
-                cerca_nome = st.text_input("🔎 Cerca Nome:")
-            with col_f4:
-                mostra_anche_venduti = st.checkbox("👁️ Mostra Venduti", value=False)
-
-            df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
-
-            if macro_reparto != "Tutti" and rm_col in df_filtrato.columns:
-                ruoli_target = MAPPA_REPARTI[macro_reparto]
-                pattern_reparto = r'\b(' + '|'.join(ruoli_target) + r')\b'
-                df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(pattern_reparto, case=False, regex=True, na=False)]
-
-            if ruolo_specifico != "Tutti" and rm_col in df_filtrato.columns:
-                pattern_ruolo = r'\b' + re.escape(ruolo_specifico) + r'\b'
-                df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(pattern_ruolo, case=False, regex=True, na=False)]
-
-            if cerca_nome and nome_col in df_filtrato.columns:
-                df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.contains(cerca_nome, case=False, na=False)]# ------------------------------------------
-        # 🔍 TAB 1: LISTONE A-Z & ASTA
-        # ------------------------------------------
-        with tab_asta:
             set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
             
             col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns([2, 2, 2, 1, 1])
