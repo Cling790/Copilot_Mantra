@@ -538,6 +538,7 @@ if df is not None:
                 st.info("Nessun giocatore acquistato finora. Acquista i tuoi giocatori dalla scheda Listone!")
 
         # ------------------------------------------
+        # ------------------------------------------
         # 🤝 TAB 3: TUTTI I VENDUTI (ROSA GENERALE)
         # ------------------------------------------
         with tab_venduti:
@@ -546,22 +547,36 @@ if df is not None:
             
             if st.session_state.tutti_venduti:
                 df_venduti = pd.DataFrame(st.session_state.tutti_venduti)
-                # Formattiamo il dataframe per una migliore visualizzazione
                 colonne_mostrate = ["Nome", "Squadra", "RM", "Prezzo", "Mio"]
                 st.dataframe(df_venduti[[c for c in colonne_mostrate if c in df_venduti.columns]], use_container_width=True)
                 
                 st.divider()
                 st.markdown("### 🗑️ Correggi Errore Globale")
-                st.caption("Usa questo strumento per annullare l'assegnazione di **qualsiasi giocatore** agli altri partecipanti. Tornerà disponibile per essere chiamato nel listone.")
+                st.caption("Filtra inserendo le iniziali del giocatore per aggiornare subito il menu a tendina.")
                 
-                col_del_v1, col_del_v2 = st.columns([3, 1])
-                with col_del_v1:
-                    lista_tutti = sorted([v["Nome"] for v in st.session_state.tutti_venduti])
-                    giocatore_da_rimuovere_v = st.selectbox("Seleziona giocatore venduto da annullare:", options=lista_tutti, key="sel_del_tutti")
-                with col_del_v2:
-                    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-                    if st.button("❌ Annulla Acquisto", type="primary", key="btn_del_tutti"):
-                        rimuovi_giocatore(giocatore_da_rimuovere_v)
+                # 1. Campo per inserire le iniziali o parte del nome
+                cerca_venduto = st.text_input("🔎 Filtra per iniziali o nome:", key="search_venduti", placeholder="Es. Laut, Kva, Dy...")
+
+                # 2. Estrazione e filtraggio dinamico della lista dei 300 venduti
+                lista_tutti = sorted([v["Nome"] for v in st.session_state.tutti_venduti])
+                if cerca_venduto:
+                    lista_tutti = [n for n in lista_tutti if cerca_venduto.lower() in n.lower()]
+
+                # 3. Menu a tendina e pulsante di annullamento
+                if lista_tutti:
+                    col_del_v1, col_del_v2 = st.columns([3, 1])
+                    with col_del_v1:
+                        giocatore_da_rimuovere_v = st.selectbox(
+                            "Seleziona giocatore dal menu a tendina:", 
+                            options=lista_tutti, 
+                            key="sel_del_tutti"
+                        )
+                    with col_del_v2:
+                        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+                        if st.button("❌ Annulla Acquisto", type="primary", key="btn_del_tutti"):
+                            rimuovi_giocatore(giocatore_da_rimuovere_v)
+                else:
+                    st.warning("⚠️ Nessun giocatore venduto corrisponde alle lettere digitate.")
             else:
                 st.info("Nessun giocatore è stato ancora venduto in questa sessione d'asta.")
 
