@@ -138,8 +138,6 @@ if 'tutti_venduti' not in st.session_state:
     st.session_state.tutti_venduti = []
 if 'autenticato' not in st.session_state:
     st.session_state.autenticato = False
-if 'giocatore_selezionato' not in st.session_state:
-    st.session_state.giocatore_selezionato = None
 
 # ==========================================
 # 🔐 CONFIGURAZIONE SICUREZZA
@@ -367,35 +365,35 @@ if df is not None:
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
 
         # ==========================================
-        # 💬 POPUP DIALOG PER CHIAMATA GIOCATORE
+        # 💬 POPUP DIALOG NATIVO (SENZA STUCK OVERLAY)
         # ==========================================
         @st.dialog("⚡ Gestione Asta")
-        def mostra_modal_chiamata():
-            g_sel = st.session_state.giocatore_selezionato
+        def mostra_modal_chiamata(g_sel):
             gn = g_sel[nome_col]
-            grm = g_sel[rm_col]
-            gsq = g_sel[squadra_col] if squadra_col in g_sel else "-"
-            v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1
+            grm = str(g_sel[rm_col])
+            gsq = str(g_sel[squadra_col])[:3].upper() if squadra_col in g_sel else "-"
+            v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1.0
             p_stim = max(1, round(v_base * coeff_inflazione))
 
-            st.markdown(f"### **{gn}** ({gsq} - {grm})")
+            st.markdown(f"### **{gn}** ({gsq} - `{grm}`) ")
             st.caption(f"Valore FVM M: **{int(v_base)}** | Prezzo Consigliato: **{p_stim} cr**")
             
-            prezzo_input = st.number_input("Prezzo Finale d'Asta:", min_value=1, value=int(p_stim), key="p_input_dialog")
+            prezzo_input = st.number_input("Prezzo Finale d'Asta:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
             
-            col_b1, col_b2 = st.columns(2)
+            col_b1, col_b2, col_b3 = st.columns([1, 1, 1])
             with col_b1:
-                if st.button("✅ ACQUISTA (MIO)", type="primary", use_container_width=True):
+                if st.button("✅ MIO", type="primary", use_container_width=True, key=f"btn_acq_{gn}"):
                     st.session_state.rosa.append({"Nome": gn, "Squadra": gsq, "RM": grm, "Prezzo": prezzo_input})
                     st.session_state.tutti_venduti.append({"Nome": gn, "FVM": v_base, "Prezzo": prezzo_input, "Mio": True})
-                    st.session_state.giocatore_selezionato = None
                     salva_backup()
                     st.rerun()
             with col_b2:
-                if st.button("📌 VENDUTO AD ALTRI", use_container_width=True):
+                if st.button("📌 ALTRI", use_container_width=True, key=f"btn_vend_{gn}"):
                     st.session_state.tutti_venduti.append({"Nome": gn, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
-                    st.session_state.giocatore_selezionato = None
                     salva_backup()
+                    st.rerun()
+            with col_b3:
+                if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
                     st.rerun()
         
         # ------------------------------------------
@@ -426,7 +424,7 @@ if df is not None:
             if cerca_nome and nome_col in df_filtrato.columns:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.contains(cerca_nome, case=False, na=False)]
 
-            # 🔤 ORDINAMENTO TASSATIVO IN ORDINE ALFABETICO A-Z PER NOME
+            # ORDINAMENTO ALFABETICO A-Z
             if nome_col in df_filtrato.columns:
                 df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
@@ -457,7 +455,6 @@ if df is not None:
                     tags_list.extend([t.strip() for t in str(row[note_col]).split(',')])
 
                 tags_html = "".join([f'<span class="tag-pill">{t}</span> ' for t in tags_list])
-
                 col_bg = get_ruolo_colore(g_rm)
                 
                 stato_tag = ""
@@ -490,12 +487,8 @@ if df is not None:
                     st.markdown(card_html, unsafe_allow_html=True)
 
                 with col_btn:
-                    if st.button("⚡ Chiama", key=f"btn_{g_nome}"):
-                        st.session_state.giocatore_selezionato = row.to_dict()
-                        st.rerun()
-
-            if st.session_state.giocatore_selezionato:
-                mostra_modal_chiamata()
+                    if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}"):
+                        mostra_modal_chiamata(row.to_dict())
 
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
