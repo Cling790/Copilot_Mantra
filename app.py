@@ -100,7 +100,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 💾 GESTIONE BACKUP
+# 💾 GESTIONE BACKUP E STATO
 # ==========================================
 FILE_BACKUP = "backup_asta.json"
 
@@ -138,6 +138,13 @@ if 'tutti_venduti' not in st.session_state:
     st.session_state.tutti_venduti = []
 if 'autenticato' not in st.session_state:
     st.session_state.autenticato = False
+
+# FUNZIONE PER ANNULLARE UN ACQUISTO (TUO O DEGLI ALTRI)
+def rimuovi_giocatore(nome_giocatore):
+    st.session_state.rosa = [p for p in st.session_state.rosa if p['Nome'] != nome_giocatore]
+    st.session_state.tutti_venduti = [v for v in st.session_state.tutti_venduti if v['Nome'] != nome_giocatore]
+    salva_backup()
+    st.rerun()
 
 # ==========================================
 # 🔐 CONFIGURAZIONE SICUREZZA
@@ -337,11 +344,19 @@ st.sidebar.metric(label="Rilancio MAX Assoluto", value=f"{rilancio_massimo} cr")
 
 st.sidebar.divider()
 st.sidebar.subheader("📁 File caricati da GitHub")
-st.sidebar.caption("L'app legge in automatico `Quotazioni` e `FASCE_TIT_RIG.xlsx`. Se vuoi sostituirli manualmente usa i campi sotto:")
+st.sidebar.caption("L'app legge in automatico i file dalla repo. Puoi sostituirli qui:")
 file_caricato_m = st.sidebar.file_uploader("Sostituisci Quotazioni (.xlsx/.csv)", type=["xlsx", "csv"], key="u_main")
 file_caricato_s = st.sidebar.file_uploader("Sostituisci Fasce/Tit/Rig (.xlsx/.csv)", type=["xlsx", "csv"], key="u_sec")
 
-tab_asta, tab_rosa, tab_moduli = st.tabs(["🔍 Listone A-Z & Asta", "📋 La Mia Rosa", "🧩 Analizzatore Moduli Mantra"])
+# ==========================================
+# 📑 GESTIONE DELLE TABS (ORA 4 TABS)
+# ==========================================
+tab_asta, tab_rosa, tab_venduti, tab_moduli = st.tabs([
+    "🔍 Listone & Asta", 
+    "📋 La Mia Rosa", 
+    "🤝 Tutti i Venduti", 
+    "🧩 Analizzatore Moduli"
+])
 
 df = carica_dati_completi(file_caricato_m, file_caricato_s)
 
@@ -365,7 +380,7 @@ if df is not None:
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
 
         # ==========================================
-        # 💬 POPUP DIALOG NATIVO (SENZA STUCK OVERLAY)
+        # 💬 POPUP DIALOG NATIVO (GESTIONE CHIAMATA)
         # ==========================================
         @st.dialog("⚡ Gestione Asta")
         def mostra_modal_chiamata(g_sel):
@@ -384,12 +399,12 @@ if df is not None:
             with col_b1:
                 if st.button("✅ MIO", type="primary", use_container_width=True, key=f"btn_acq_{gn}"):
                     st.session_state.rosa.append({"Nome": gn, "Squadra": gsq, "RM": grm, "Prezzo": prezzo_input})
-                    st.session_state.tutti_venduti.append({"Nome": gn, "FVM": v_base, "Prezzo": prezzo_input, "Mio": True})
+                    st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": True})
                     salva_backup()
                     st.rerun()
             with col_b2:
                 if st.button("📌 ALTRI", use_container_width=True, key=f"btn_vend_{gn}"):
-                    st.session_state.tutti_venduti.append({"Nome": gn, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
+                    st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
                     salva_backup()
                     st.rerun()
             with col_b3:
@@ -408,7 +423,7 @@ if df is not None:
             with col_f3:
                 cerca_nome = st.text_input("🔎 Cerca Nome:")
             with col_f4:
-                mostra_anche_venduti = st.checkbox("👁️ Venduti", value=False)
+                mostra_anche_venduti = st.checkbox("👁️ Mostra Venduti", value=False)
 
             df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
 
@@ -429,7 +444,6 @@ if df is not None:
                 df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
             df_filtrato = df_filtrato.head(40)
-
             st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
 
             for _, row in df_filtrato.iterrows():
@@ -491,7 +505,7 @@ if df is not None:
                         mostra_modal_chiamata(row.to_dict())
 
         # ------------------------------------------
-        # 📋 TAB 2: LA MIA ROSA
+        # 📋 TAB 2: LA MIA ROSA (CON OPZIONE ANNULLA)
         # ------------------------------------------
         with tab_rosa:
             st.subheader("📋 La Mia Rosa")
@@ -499,6 +513,19 @@ if df is not None:
                 df_rosa = pd.DataFrame(st.session_state.rosa)
                 st.dataframe(df_rosa, use_container_width=True)
                 
+                st.divider()
+                st.markdown("### 🗑️ Correggi Errore (Svincola/Annulla Acquisto)")
+                st.caption("Hai assegnato un giocatore per sbaglio o a un prezzo errato? Annullalo da qui e tornerà nel listone.")
+                
+                col_del_r1, col_del_r2 = st.columns([3, 1])
+                with col_del_r1:
+                    lista_miei = sorted([p["Nome"] for p in st.session_state.rosa])
+                    giocatore_da_rimuovere = st.selectbox("Seleziona il tuo giocatore da annullare:", options=lista_miei, key="sel_del_mio")
+                with col_del_r2:
+                    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+                    if st.button("❌ Annulla Acquisto", type="primary", key="btn_del_mio"):
+                        rimuovi_giocatore(giocatore_da_rimuovere)
+
                 st.divider()
                 st.subheader("📊 Riepilogo Rosa e Spesa")
                 c_r1, c_r2, c_r3, c_r4 = st.columns(4)
@@ -511,7 +538,35 @@ if df is not None:
                 st.info("Nessun giocatore acquistato finora. Acquista i tuoi giocatori dalla scheda Listone!")
 
         # ------------------------------------------
-        # 🧩 TAB 3: ANALIZZATORE MODULI MANTRA
+        # 🤝 TAB 3: TUTTI I VENDUTI (ROSA GENERALE)
+        # ------------------------------------------
+        with tab_venduti:
+            st.subheader("🤝 Riepilogo Generale Venduti")
+            st.caption("Qui puoi vedere tutti i giocatori assegnati in lega (tuoi e degli altri manager).")
+            
+            if st.session_state.tutti_venduti:
+                df_venduti = pd.DataFrame(st.session_state.tutti_venduti)
+                # Formattiamo il dataframe per una migliore visualizzazione
+                colonne_mostrate = ["Nome", "Squadra", "RM", "Prezzo", "Mio"]
+                st.dataframe(df_venduti[[c for c in colonne_mostrate if c in df_venduti.columns]], use_container_width=True)
+                
+                st.divider()
+                st.markdown("### 🗑️ Correggi Errore Globale")
+                st.caption("Usa questo strumento per annullare l'assegnazione di **qualsiasi giocatore** agli altri partecipanti. Tornerà disponibile per essere chiamato nel listone.")
+                
+                col_del_v1, col_del_v2 = st.columns([3, 1])
+                with col_del_v1:
+                    lista_tutti = sorted([v["Nome"] for v in st.session_state.tutti_venduti])
+                    giocatore_da_rimuovere_v = st.selectbox("Seleziona giocatore venduto da annullare:", options=lista_tutti, key="sel_del_tutti")
+                with col_del_v2:
+                    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+                    if st.button("❌ Annulla Acquisto", type="primary", key="btn_del_tutti"):
+                        rimuovi_giocatore(giocatore_da_rimuovere_v)
+            else:
+                st.info("Nessun giocatore è stato ancora venduto in questa sessione d'asta.")
+
+        # ------------------------------------------
+        # 🧩 TAB 4: ANALIZZATORE MODULI MANTRA
         # ------------------------------------------
         with tab_moduli:
             st.subheader("🧩 Analizzatore Moduli e Copertura Rosa Mantra")
