@@ -12,7 +12,6 @@ st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
-        overscroll-behavior-y: contain !important;
         background-color: #0e1117;
     }
     
@@ -179,12 +178,12 @@ LISTA_RUOLI_MANTRA = ["Tutti", "POR", "DD", "DS", "DC", "B", "E", "M", "C", "W",
 def get_ruolo_colore(rm_str):
     rm_upper = str(rm_str).upper()
     if any(r in rm_upper for r in ['PC', 'A', 'W']):
-        return '#e74c3c'  # Rosso (Attacco)
+        return '#e74c3c'  # Rosso
     elif any(r in rm_upper for r in ['T', 'C', 'M', 'E']):
-        return '#2980b9'  # Blu (Centrocampo)
+        return '#2980b9'  # Blu
     elif any(r in rm_upper for r in ['DD', 'DS', 'DC', 'B']):
-        return '#27ae60'  # Verde (Difesa)
-    return '#f39c12'      # Giallo (Porta)
+        return '#27ae60'  # Verde
+    return '#f39c12'      # Giallo
 
 def get_reparto(rm_str):
     rm_str = str(rm_str).upper()
@@ -209,31 +208,90 @@ def leggi_file_intelligente(sorgente):
             continue
     return None
 
-def carica_df_principale(file_caricato_user):
-    if file_caricato_user is not None:
-        return leggi_file_intelligente(file_caricato_user)
-    
-    possibili_nomi = [
-        "Quotazioni_Fantacalcio_Stagione_2026_27.xlsx",
-        "Quotazioni_Fantacalcio_Stagione_2026_27.csv",
-        "Listone.xlsx", "Quotazioni.xlsx"
-    ]
-    for nome in possibili_nomi:
-        if os.path.exists(nome):
-            df_loc = leggi_file_intelligente(nome)
-            if df_loc is not None:
-                return df_loc
-
+def unisci_dati(df_main, df_sec):
+    if df_main is None or df_sec is None:
+        return df_main
     try:
-        for f in os.listdir("."):
-            f_lower = f.lower()
-            if (f_lower.startswith("quotazioni") or f_lower.startswith("listone")) and (f_lower.endswith(".xlsx") or f_lower.endswith(".csv")):
-                df_loc = leggi_file_intelligente(f)
-                if df_loc is not None:
-                    return df_loc
+        col_nome_main = next((c for c in df_main.columns if str(c).lower().strip() in ['nome', 'calciatore']), None)
+        col_nome_sec = next((c for c in df_sec.columns if str(c).lower().strip() in ['nome', 'calciatore']), None)
+
+        if col_nome_main and col_nome_sec:
+            df_main['_key_nome'] = df_main[col_nome_main].astype(str).str.lower().str.strip()
+            df_sec['_key_nome'] = df_sec[col_nome_sec].astype(str).str.lower().str.strip()
+
+            colonne_utili = [c for c in df_sec.columns if c not in df_main.columns or c == '_key_nome']
+            df_sec_clean = df_sec[colonne_utili].drop_duplicates(subset=['_key_nome'])
+
+            df_merged = pd.merge(df_main, df_sec_clean, on='_key_nome', how='left', suffixes=('', '_sec'))
+            df_merged.drop(columns=['_key_nome'], inplace=True, errors='ignore')
+            return df_merged
     except Exception:
         pass
-    return None
+    return df_main
+
+def carica_dati_completi(file_main_user=None, file_sec_user=None):
+    # 1. Carica File Quotazioni Principale
+    df_main = None
+    if file_main_user is not None:
+        df_main = leggi_file_intelligente(file_main_user)
+    else:
+        possibili_nomi_main = [
+            "Quotazioni_Fantacalcio_Stagione_2026_27.xlsx",
+            "Quotazioni_Fantacalcio_Stagione_2026_27.csv",
+            "Listone.xlsx", "Quotazioni.xlsx"
+        ]
+        for nome in possibili_nomi_main:
+            if os.path.exists(nome):
+                df_main = leggi_file_intelligente(nome)
+                if df_main is not None:
+                    break
+
+        if df_main is None:
+            try:
+                for f in os.listdir("."):
+                    f_lower = f.lower()
+                    if (f_lower.startswith("quotazioni") or f_lower.startswith("listone")) and (f_lower.endswith(".xlsx") or f_lower.endswith(".csv")):
+                        df_main = leggi_file_intelligente(f)
+                        if df_main is not None:
+                            break
+            except Exception:
+                pass
+
+    if df_main is None:
+        return None
+
+    # 2. Carica File Titolarità, Fasce, Rigoristi (FASCE_TIT_RIG.xlsx)
+    df_sec = None
+    if file_sec_user is not None:
+        df_sec = leggi_file_intelligente(file_sec_user)
+    else:
+        possibili_nomi_sec = [
+            "FASCE_TIT_RIG.xlsx",
+            "FASCE_TIT_RIG.csv",
+            "Fasce.xlsx"
+        ]
+        for nome in possibili_nomi_sec:
+            if os.path.exists(nome):
+                df_sec = leggi_file_intelligente(nome)
+                if df_sec is not None:
+                    break
+
+        if df_sec is None:
+            try:
+                for f in os.listdir("."):
+                    f_lower = f.lower()
+                    if ("fasce" in f_lower or "tit" in f_lower) and (f_lower.endswith(".xlsx") or f_lower.endswith(".csv")):
+                        df_sec = leggi_file_intelligente(f)
+                        if df_sec is not None:
+                            break
+            except Exception:
+                pass
+
+    # Unione automatica dei due file
+    if df_sec is not None:
+        df_main = unisci_dati(df_main, df_sec)
+
+    return df_main
 
 LIMITI = {'Portieri': 4, 'Difensori': 9, 'Centrocampisti': 9, 'Trequartisti/Attaccanti': 10}
 SLOT_TOTALI = sum(LIMITI.values())
@@ -269,11 +327,14 @@ st.sidebar.metric(label="Budget Rimanente", value=f"{budget_rimanente} cr", delt
 st.sidebar.metric(label="Rilancio MAX Assoluto", value=f"{rilancio_massimo} cr")
 
 st.sidebar.divider()
-file_caricato = st.sidebar.file_uploader("📁 Carica Quotazioni (.xlsx/.csv)", type=["xlsx", "csv"])
+st.sidebar.subheader("📁 File caricati da GitHub")
+st.sidebar.caption("L'app legge in automatico `Quotazioni` e `FASCE_TIT_RIG.xlsx`. Se vuoi sostituirli manualmente usa i campi sotto:")
+file_caricato_m = st.sidebar.file_uploader("Sostituisci Quotazioni (.xlsx/.csv)", type=["xlsx", "csv"], key="u_main")
+file_caricato_s = st.sidebar.file_uploader("Sostituisci Fasce/Tit/Rig (.xlsx/.csv)", type=["xlsx", "csv"], key="u_sec")
 
 tab_asta, tab_rosa, tab_moduli = st.tabs(["🔍 Listone A-Z & Asta", "📋 La Mia Rosa", "🧩 Analizzatore Moduli Mantra"])
 
-df = carica_df_principale(file_caricato)
+df = carica_dati_completi(file_caricato_m, file_caricato_s)
 
 if df is not None:
     try:
@@ -282,7 +343,6 @@ if df is not None:
         rm_col = next((c for c in colonne if str(c).upper() == 'RM'), 'RM')
         squadra_col = next((c for c in colonne if str(c).lower() in ['squadra', 'club']), 'Squadra')
         
-        # Distinzione tra FVM M e Qt.A
         fvm_col = next((c for c in colonne if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm']), None)
         qta_col = next((c for c in colonne if str(c).lower() in ['qt.a m', 'qt.a', 'qta m', 'qta', 'quotazione']), None)
         
@@ -293,7 +353,6 @@ if df is not None:
 
         miei_nomi = {p['Nome']: p['Prezzo'] for p in st.session_state.rosa}
         venduti_dict = {v['Nome']: v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
-
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
 
         # ==========================================
@@ -362,18 +421,13 @@ if df is not None:
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
                 g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
                 
-                # Valore FVM M per il Box Blu
                 val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
-                
-                # Quotazione Qt.A per il tag grigio
                 val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
 
-                # Stelle Titolarità
                 tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
                 tit_val = min(max(tit_val, 1), 5)
                 stelle = "★" * tit_val + "☆" * (5 - tit_val)
 
-                # Tag Sotto al Nome (Qt.a, Fascia, Rig, Note)
                 tags_list = []
                 if val_qta is not None:
                     tags_list.append(f"Qt.a {val_qta}")
