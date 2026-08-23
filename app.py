@@ -20,8 +20,8 @@ st.markdown("""
         background-color: #161a23;
         border: 1px solid #282e3d;
         border-radius: 12px;
-        padding: 12px 16px;
-        margin-bottom: 10px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -31,12 +31,12 @@ st.markdown("""
     .player-left {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 12px;
     }
     
     .role-badge-circle {
-        width: 44px;
-        height: 44px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -72,7 +72,7 @@ st.markdown("""
         background-color: #232936;
         color: #a0aec0;
         font-size: 11px;
-        padding: 3px 8px;
+        padding: 2px 7px;
         border-radius: 6px;
         border: 1px solid #323b4e;
     }
@@ -83,7 +83,7 @@ st.markdown("""
         border-radius: 8px;
         padding: 6px 12px;
         text-align: center;
-        min-width: 75px;
+        min-width: 70px;
         box-shadow: 0 2px 8px rgba(29, 107, 243, 0.4);
     }
     .fvm-val {
@@ -282,7 +282,10 @@ if df is not None:
         rm_col = next((c for c in colonne if str(c).upper() == 'RM'), 'RM')
         squadra_col = next((c for c in colonne if str(c).lower() in ['squadra', 'club']), 'Squadra')
         
-        valore_col = next((c for c in colonne if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm', 'qt.a m', 'qt.a']), None)
+        # Distinzione tra FVM M e Qt.A
+        fvm_col = next((c for c in colonne if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm']), None)
+        qta_col = next((c for c in colonne if str(c).lower() in ['qt.a m', 'qt.a', 'qta m', 'qta', 'quotazione']), None)
+        
         tit_col = next((c for c in colonne if str(c).lower() in ['titolarità', 'titolarita', 'tit', 'status']), None)
         fascia_col = next((c for c in colonne if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
         rig_col = next((c for c in colonne if str(c).lower() in ['rigorista', 'rigoristi', 'rig']), None)
@@ -292,6 +295,38 @@ if df is not None:
         venduti_dict = {v['Nome']: v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
 
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
+
+        # ==========================================
+        # 💬 POPUP DIALOG PER CHIAMATA GIOCATORE
+        # ==========================================
+        @st.dialog("⚡ Gestione Asta")
+        def mostra_modal_chiamata():
+            g_sel = st.session_state.giocatore_selezionato
+            gn = g_sel[nome_col]
+            grm = g_sel[rm_col]
+            gsq = g_sel[squadra_col] if squadra_col in g_sel else "-"
+            v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1
+            p_stim = max(1, round(v_base * coeff_inflazione))
+
+            st.markdown(f"### **{gn}** ({gsq} - {grm})")
+            st.caption(f"Valore FVM M: **{int(v_base)}** | Prezzo Consigliato: **{p_stim} cr**")
+            
+            prezzo_input = st.number_input("Prezzo Finale d'Asta:", min_value=1, value=int(p_stim), key="p_input_dialog")
+            
+            col_b1, col_b2 = st.columns(2)
+            with col_b1:
+                if st.button("✅ ACQUISTA (MIO)", type="primary", use_container_width=True):
+                    st.session_state.rosa.append({"Nome": gn, "Squadra": gsq, "RM": grm, "Prezzo": prezzo_input})
+                    st.session_state.tutti_venduti.append({"Nome": gn, "FVM": v_base, "Prezzo": prezzo_input, "Mio": True})
+                    st.session_state.giocatore_selezionato = None
+                    salva_backup()
+                    st.rerun()
+            with col_b2:
+                if st.button("📌 VENDUTO AD ALTRI", use_container_width=True):
+                    st.session_state.tutti_venduti.append({"Nome": gn, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
+                    st.session_state.giocatore_selezionato = None
+                    salva_backup()
+                    st.rerun()
         
         with tab_asta:
             col_f1, col_f2, col_f3, col_f4 = st.columns([2, 2, 2, 1])
@@ -326,15 +361,22 @@ if df is not None:
                 g_nome = row[nome_col]
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
                 g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
-                val_fvm = int(row[valore_col]) if (valore_col and pd.notna(row[valore_col])) else 1
                 
+                # Valore FVM M per il Box Blu
+                val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
+                
+                # Quotazione Qt.A per il tag grigio
+                val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
+
                 # Stelle Titolarità
                 tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
                 tit_val = min(max(tit_val, 1), 5)
                 stelle = "★" * tit_val + "☆" * (5 - tit_val)
 
-                # Tag Sotto al Nome (Fascia, Rig, Note)
+                # Tag Sotto al Nome (Qt.a, Fascia, Rig, Note)
                 tags_list = []
+                if val_qta is not None:
+                    tags_list.append(f"Qt.a {val_qta}")
                 if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']:
                     tags_list.append(str(row[fascia_col]).strip())
                 if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
@@ -370,7 +412,7 @@ if df is not None:
 </div>
 <div class="fvm-box">
 <div class="fvm-val">{val_fvm}</div>
-<div class="fvm-label">MANTRA</div>
+<div class="fvm-label">FVM M</div>
 </div>
 </div>"""
                     st.markdown(card_html, unsafe_allow_html=True)
@@ -378,37 +420,10 @@ if df is not None:
                 with col_btn:
                     if st.button("⚡ Chiama", key=f"btn_{g_nome}"):
                         st.session_state.giocatore_selezionato = row.to_dict()
+                        st.rerun()
 
             if st.session_state.giocatore_selezionato:
-                st.divider()
-                g_sel = st.session_state.giocatore_selezionato
-                gn = g_sel[nome_col]
-                grm = g_sel[rm_col]
-                gsq = g_sel[squadra_col] if squadra_col in g_sel else "-"
-                v_base = float(g_sel[valore_col]) if (valore_col and pd.notna(g_sel[valore_col])) else 1
-                p_stim = max(1, round(v_base * coeff_inflazione))
-
-                st.markdown(f"### ⚡ Gestione Asta per: **{gn}** ({gsq} - {grm})")
-                
-                col_i1, col_i2 = st.columns([2, 1])
-                with col_i1:
-                    prezzo_input = st.number_input("Prezzo Finale d'Asta:", min_value=1, value=int(p_stim), key="p_input_scheda")
-                
-                with col_i2:
-                    col_b1, col_b2 = st.columns(2)
-                    with col_b1:
-                        if st.button("✅ ACQUISTA (MIO)", type="primary", use_container_width=True):
-                            st.session_state.rosa.append({"Nome": gn, "Squadra": gsq, "RM": grm, "Prezzo": prezzo_input})
-                            st.session_state.tutti_venduti.append({"Nome": gn, "FVM": v_base, "Prezzo": prezzo_input, "Mio": True})
-                            st.session_state.giocatore_selezionato = None
-                            salva_backup()
-                            st.rerun()
-                    with col_b2:
-                        if st.button("📌 VENDUTO AD ALTRI", use_container_width=True):
-                            st.session_state.tutti_venduti.append({"Nome": gn, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
-                            st.session_state.giocatore_selezionato = None
-                            salva_backup()
-                            st.rerun()
+                mostra_modal_chiamata()
 
         with tab_rosa:
             st.subheader("📋 La Mia Rosa")
