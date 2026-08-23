@@ -175,6 +175,20 @@ MAPPA_REPARTI = {
 
 LISTA_RUOLI_MANTRA = ["Tutti", "POR", "DD", "DS", "DC", "B", "E", "M", "C", "W", "T", "A", "PC"]
 
+SCHEMI_MANTRA = {
+    "3-4-2-1": [["POR"], ["DC"], ["DC"], ["DC"], ["E", "W"], ["M", "C"], ["M", "C"], ["E", "W"], ["T", "W"], ["T", "A"], ["PC"]],
+    "3-4-1-2": [["POR"], ["DC"], ["DC"], ["DC"], ["E", "W"], ["M", "C"], ["M", "C"], ["E", "W"], ["T"], ["PC", "A"], ["PC"]],
+    "3-4-3":   [["POR"], ["DC"], ["DC"], ["DC"], ["E", "W"], ["M", "C"], ["M", "C"], ["E", "W"], ["W", "A"], ["PC"], ["W", "A"]],
+    "3-5-2":   [["POR"], ["DC"], ["DC"], ["DC"], ["E", "W"], ["M", "C"], ["M", "C"], ["M", "C"], ["E", "W"], ["PC", "A"], ["PC"]],
+    "3-5-1-1": [["POR"], ["DC"], ["DC"], ["DC"], ["E", "W"], ["M", "C"], ["M", "C"], ["M", "C"], ["E", "W"], ["T", "A"], ["PC"]],
+    "4-3-3":   [["POR"], ["DD"], ["DC"], ["DC"], ["DS"], ["M"], ["C"], ["C"], ["W", "A"], ["PC"], ["W", "A"]],
+    "4-3-1-2": [["POR"], ["DD"], ["DC"], ["DC"], ["DS"], ["M", "C"], ["M", "C"], ["M", "C"], ["T"], ["PC", "A"], ["PC"]],
+    "4-2-3-1": [["POR"], ["DD"], ["DC"], ["DC"], ["DS"], ["M"], ["M", "C"], ["W"], ["T"], ["W", "A"], ["PC"]],
+    "4-3-2-1": [["POR"], ["DD"], ["DC"], ["DC"], ["DS"], ["M", "C"], ["M", "C"], ["M", "C"], ["T"], ["T", "W"], ["PC"]],
+    "4-1-4-1": [["POR"], ["DD"], ["DC"], ["DC"], ["DS"], ["M"], ["E"], ["C", "T"], ["C", "T"], ["E"], ["PC", "A"]],
+    "4-4-2":   [["POR"], ["DD"], ["DC"], ["DC"], ["DS"], ["E", "W"], ["M", "C"], ["M", "C"], ["E", "W"], ["PC", "A"], ["PC"]],
+}
+
 def get_ruolo_colore(rm_str):
     rm_upper = str(rm_str).upper()
     if any(r in rm_upper for r in ['PC', 'A', 'W']):
@@ -230,7 +244,6 @@ def unisci_dati(df_main, df_sec):
     return df_main
 
 def carica_dati_completi(file_main_user=None, file_sec_user=None):
-    # 1. Carica File Quotazioni Principale
     df_main = None
     if file_main_user is not None:
         df_main = leggi_file_intelligente(file_main_user)
@@ -260,7 +273,6 @@ def carica_dati_completi(file_main_user=None, file_sec_user=None):
     if df_main is None:
         return None
 
-    # 2. Carica File Titolarità, Fasce, Rigoristi (FASCE_TIT_RIG.xlsx)
     df_sec = None
     if file_sec_user is not None:
         df_sec = leggi_file_intelligente(file_sec_user)
@@ -287,7 +299,6 @@ def carica_dati_completi(file_main_user=None, file_sec_user=None):
             except Exception:
                 pass
 
-    # Unione automatica dei due file
     if df_sec is not None:
         df_main = unisci_dati(df_main, df_sec)
 
@@ -387,6 +398,9 @@ if df is not None:
                     salva_backup()
                     st.rerun()
         
+        # ------------------------------------------
+        # 🔍 TAB 1: LISTONE A-Z & ASTA
+        # ------------------------------------------
         with tab_asta:
             col_f1, col_f2, col_f3, col_f4 = st.columns([2, 2, 2, 1])
             with col_f1:
@@ -412,9 +426,13 @@ if df is not None:
             if cerca_nome and nome_col in df_filtrato.columns:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.contains(cerca_nome, case=False, na=False)]
 
+            # 🔤 ORDINAMENTO TASSATIVO IN ORDINE ALFABETICO A-Z PER NOME
+            if nome_col in df_filtrato.columns:
+                df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
+
             df_filtrato = df_filtrato.head(40)
 
-            st.write(f"Mostrando **{len(df_filtrato)}** giocatori:")
+            st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
 
             for _, row in df_filtrato.iterrows():
                 g_nome = row[nome_col]
@@ -479,12 +497,114 @@ if df is not None:
             if st.session_state.giocatore_selezionato:
                 mostra_modal_chiamata()
 
+        # ------------------------------------------
+        # 📋 TAB 2: LA MIA ROSA
+        # ------------------------------------------
         with tab_rosa:
             st.subheader("📋 La Mia Rosa")
             if st.session_state.rosa:
-                st.dataframe(pd.DataFrame(st.session_state.rosa), use_container_width=True)
+                df_rosa = pd.DataFrame(st.session_state.rosa)
+                st.dataframe(df_rosa, use_container_width=True)
+                
+                st.divider()
+                st.subheader("📊 Riepilogo Rosa e Spesa")
+                c_r1, c_r2, c_r3, c_r4 = st.columns(4)
+                for i, (rep_nome, max_s) in enumerate(LIMITI.items()):
+                    p_rep = [p for p in st.session_state.rosa if get_reparto(p['RM']) == rep_nome]
+                    spesa_rep = sum(p['Prezzo'] for p in p_rep)
+                    col_target = [c_r1, c_r2, c_r3, c_r4][i]
+                    col_target.metric(f"{rep_nome}", f"{len(p_rep)} / {max_s}", f"{spesa_rep} cr spesi")
             else:
-                st.info("Nessun giocatore acquistato.")
+                st.info("Nessun giocatore acquistato finora. Acquista i tuoi giocatori dalla scheda Listone!")
+
+        # ------------------------------------------
+        # 🧩 TAB 3: ANALIZZATORE MODULI MANTRA
+        # ------------------------------------------
+        with tab_moduli:
+            st.subheader("🧩 Analizzatore Moduli e Copertura Rosa Mantra")
+            st.caption("Verifica quali moduli puoi schierare in base ai giocatori attualmente acquistati nella tua rosa.")
+            
+            if not st.session_state.rosa:
+                st.warning("⚠️ Non hai ancora acquistato nessun giocatore. Fai acquisti per sbloccare l'analisi dei moduli!")
+            else:
+                ruoli_disponibili = {}
+                for r in LISTA_RUOLI_MANTRA[1:]:
+                    ruoli_disponibili[r] = []
+
+                for p in st.session_state.rosa:
+                    rm_tokens = [t.strip().upper() for t in re.split(r'[;,/\s]+', str(p.get('RM', '')))]
+                    for r_tok in rm_tokens:
+                        if r_tok in ruoli_disponibili:
+                            ruoli_disponibili[r_tok].append(p['Nome'])
+
+                st.markdown("### 🎴 Giocatori Disponibili per Ruolo")
+                cols_r = st.columns(len(ruoli_disponibili))
+                for idx, (ruolo_k, lista_p) in enumerate(ruoli_disponibili.items()):
+                    with cols_r[idx]:
+                        col_c = get_ruolo_colore(ruolo_k)
+                        st.markdown(f"<div style='text-align:center; background-color:{col_c}; color:white; font-weight:bold; border-radius:6px; padding:2px;'>{ruolo_k}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='text-align:center; font-size:18px; font-weight:800;'>{len(lista_p)}</div>", unsafe_allow_html=True)
+
+                st.divider()
+                st.markdown("### 📐 Verificatore di Modulo (11 Titolari)")
+
+                def verifica_schema(schema_reqs, giocatori_rosa):
+                    p_parsed = []
+                    for p in giocatori_rosa:
+                        tokens = set([t.strip().upper() for t in re.split(r'[;,/\s]+', str(p.get('RM', '')))])
+                        p_parsed.append({'Nome': p['Nome'], 'Ruoli': tokens})
+
+                    usati = set()
+                    
+                    def solve(slot_idx):
+                        if slot_idx == len(schema_reqs):
+                            return True
+                        opzioni_ruolo = schema_reqs[slot_idx]
+                        for idx_p, p in enumerate(p_parsed):
+                            if idx_p not in usati:
+                                if any(r in p['Ruoli'] for r in opzioni_ruolo):
+                                    usati.add(idx_p)
+                                    if solve(slot_idx + 1):
+                                        return True
+                                    usati.remove(idx_p)
+                        return False
+
+                    slot_coperti = 0
+                    test_usati = set()
+                    for opzioni_ruolo in schema_reqs:
+                        trovato = False
+                        for idx_p, p in enumerate(p_parsed):
+                            if idx_p not in test_usati and any(r in p['Ruoli'] for r in opzioni_ruolo):
+                                test_usati.add(idx_p)
+                                slot_coperti += 1
+                                trovato = True
+                                break
+                    
+                    completo = solve(0)
+                    return completo, slot_coperti
+
+                res_moduli = []
+                for mod_nome, reqs in SCHEMI_MANTRA.items():
+                    is_ok, n_coperti = verifica_schema(reqs, st.session_state.rosa)
+                    res_moduli.append({
+                        "Modulo": mod_nome,
+                        "Status": "🟢 GIOCABILE" if is_ok else ("🟡 PARZIALE" if n_coperti >= 8 else "🔴 INCOMPLETO"),
+                        "Titolari Coperti": f"{n_coperti} / 11",
+                        "Giocabile": is_ok
+                    })
+
+                col_m1, col_m2 = st.columns([2, 3])
+                
+                with col_m1:
+                    df_mod = pd.DataFrame(res_moduli)
+                    st.dataframe(df_mod[["Modulo", "Status", "Titolari Coperti"]], use_container_width=True, hide_index=True)
+
+                with col_m2:
+                    moduli_ok = [m["Modulo"] for m in res_moduli if m["Giocabile"]]
+                    if moduli_ok:
+                        st.success(f"🎉 **Puoi schierare i seguenti moduli completi:** {', '.join(moduli_ok)}")
+                    else:
+                        st.info("💡 Nessun modulo ha ancora 11 titolari coperti. Continua l'asta per completare la tua formazione!")
 
     except Exception as e:
         st.error(f"Errore nella lettura dei dati: {e}")
