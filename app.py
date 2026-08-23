@@ -16,7 +16,6 @@ st.markdown("""
         background-color: #0e1117;
     }
     
-    /* Card Giocatore */
     .player-card {
         background-color: #161a23;
         border: 1px solid #282e3d;
@@ -35,7 +34,6 @@ st.markdown("""
         gap: 14px;
     }
     
-    /* Circle Badge Ruoli */
     .role-badge-circle {
         width: 44px;
         height: 44px;
@@ -50,7 +48,6 @@ st.markdown("""
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
     
-    /* Tag di dettagli */
     .team-pill {
         background-color: #2b3245;
         color: #d1d5db;
@@ -70,7 +67,6 @@ st.markdown("""
         border: 1px solid #323b4e;
     }
     
-    /* Box Blu FVM */
     .fvm-box {
         background-color: #1d6bf3;
         color: white;
@@ -173,12 +169,12 @@ LISTA_RUOLI_MANTRA = ["Tutti", "POR", "DD", "DS", "DC", "B", "E", "M", "C", "W",
 def get_ruolo_colore(rm_str):
     rm_upper = str(rm_str).upper()
     if any(r in rm_upper for r in ['PC', 'A', 'W']):
-        return '#e74c3c'  # Rosso
+        return '#e74c3c'  # Rosso (Attacco)
     elif any(r in rm_upper for r in ['T', 'C', 'M', 'E']):
-        return '#2980b9'  # Blu/Azzurro
+        return '#2980b9'  # Blu (Centrocampo)
     elif any(r in rm_upper for r in ['DD', 'DS', 'DC', 'B']):
-        return '#27ae60'  # Verde
-    return '#f39c12'      # Giallo/Arancio (POR)
+        return '#27ae60'  # Verde (Difesa)
+    return '#f39c12'      # Giallo (Porta)
 
 def get_reparto(rm_str):
     rm_str = str(rm_str).upper()
@@ -311,22 +307,19 @@ if df is not None:
             if cerca_nome and nome_col in df_filtrato.columns:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.contains(cerca_nome, case=False, na=False)]
 
-            df_filtrato = df_filtrato.head(40) # Limitiamo a 40 per renderlo ultra-veloce
+            df_filtrato = df_filtrato.head(40)
 
             st.write(f"Mostrando **{len(df_filtrato)}** giocatori:")
 
-            # --- SCHEDA SCHEDE CARDS ---
             for _, row in df_filtrato.iterrows():
                 g_nome = row[nome_col]
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
                 g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
                 val_fvm = int(row[valore_col]) if (valore_col and pd.notna(row[valore_col])) else 1
                 
-                # Stelle Titolarità
                 tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
                 stelle = "★" * min(max(tit_val, 1), 5)
 
-                # Tag secondari
                 tags_html = ""
                 if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]) != '-':
                     tags_html += f'<span class="tag-pill">{row[fascia_col]}</span> '
@@ -335,7 +328,6 @@ if df is not None:
 
                 col_bg = get_ruolo_colore(g_rm)
                 
-                # Stato MIO / VENDUTO
                 stato_tag = ""
                 if g_nome in miei_nomi:
                     stato_tag = f'<span class="tag-pill" style="background:#0055ff; color:white;">MIO ({miei_nomi[g_nome]} cr)</span>'
@@ -345,37 +337,30 @@ if df is not None:
                 col_card, col_btn = st.columns([5, 1])
 
                 with col_card:
-                    card_html = f"""
-                    <div class="player-card">
-                        <div class="player-left">
-                            <div class="role-badge-circle" style="background-color: {col_bg};">
-                                {g_rm[:4]}
-                            </div>
-                            <div>
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span class="team-pill">{g_squadra}</span>
-                                    <span style="font-size:11px; color:#f1c40f;">{stelle}</span>
-                                    {stato_tag}
-                                </div>
-                                <div style="font-size:18px; font-weight:700; margin:2px 0;">{g_nome}</div>
-                                <div style="display:flex; gap:5px; margin-top:3px;">
-                                    {tags_html}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="fvm-box">
-                            <div class="fvm-val">{val_fvm}</div>
-                            <div class="fvm-label">MANTRA</div>
-                        </div>
-                    </div>
-                    """
+                    card_html = f"""<div class="player-card">
+<div class="player-left">
+<div class="role-badge-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>
+<div>
+<div style="display:flex; align-items:center; gap:8px;">
+<span class="team-pill">{g_squadra}</span>
+<span style="font-size:11px; color:#f1c40f;">{stelle}</span>
+{stato_tag}
+</div>
+<div style="font-size:18px; font-weight:700; margin:2px 0;">{g_nome}</div>
+<div style="display:flex; gap:5px; margin-top:3px;">{tags_html}</div>
+</div>
+</div>
+<div class="fvm-box">
+<div class="fvm-val">{val_fvm}</div>
+<div class="fvm-label">MANTRA</div>
+</div>
+</div>"""
                     st.markdown(card_html, unsafe_allow_html=True)
 
                 with col_btn:
                     if st.button("⚡ Chiama", key=f"btn_{g_nome}"):
                         st.session_state.giocatore_selezionato = row.to_dict()
 
-            # --- SCHEDA D'ACQUISTO SELEZIONATA ---
             if st.session_state.giocatore_selezionato:
                 st.divider()
                 g_sel = st.session_state.giocatore_selezionato
