@@ -321,10 +321,10 @@ for p in st.session_state.rosa:
 tot_fvm_uscite = sum(v['FVM'] for v in st.session_state.tutti_venduti if v.get('FVM', 0) > 0)
 tot_spesa_uscite = sum(v['Prezzo'] for v in st.session_state.tutti_venduti)
 coeff_inflazione = (tot_spesa_uscite / tot_fvm_uscite) if tot_fvm_uscite > 0 else 1.0
+
 def calcola_occasioni(df_completo, tutti_venduti):
     nomi_venduti = set(v['Nome'] for v in tutti_venduti)
     
-    # Prendiamo solo i giocatori "importanti" (es. FVM >= 12)
     fvm_col = next((c for c in df_completo.columns if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm']), None)
     if fvm_col:
         df_top = df_completo[pd.to_numeric(df_completo[fvm_col], errors='coerce') >= 12].copy()
@@ -342,7 +342,6 @@ def calcola_occasioni(df_completo, tutti_venduti):
             venduti_ruolo = df_ruolo[df_ruolo['Nome'].isin(nomi_venduti)]
             percentuale_venduti = len(venduti_ruolo) / tot_ruolo
             
-            # Se oltre il 60% dei top di quel ruolo è andato, i rimasti sono occasioni
             if percentuale_venduti >= 0.60:
                 rimasti = df_ruolo[~df_ruolo['Nome'].isin(nomi_venduti)]
                 for n in rimasti['Nome']:
@@ -377,7 +376,7 @@ file_caricato_m = st.sidebar.file_uploader("Sostituisci Quotazioni (.xlsx/.csv)"
 file_caricato_s = st.sidebar.file_uploader("Sostituisci Fasce/Tit/Rig (.xlsx/.csv)", type=["xlsx", "csv"], key="u_sec")
 
 # ==========================================
-# 📑 GESTIONE DELLE TABS (ORA 4 TABS)
+# 📑 GESTIONE DELLE TABS (4 TABS)
 # ==========================================
 tab_asta, tab_rosa, tab_venduti, tab_moduli = st.tabs([
     "🔍 Listone & Asta", 
@@ -447,20 +446,39 @@ if df is not None:
             
             col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns([2, 2, 2, 1, 1])
             with col_f1:
-                macro_reparto = st.selectbox("🛡️ Reparto:", options=["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti/Attaccanti"])
+                macro_reparto = st.selectbox(
+                    "🛡️ Reparto:", 
+                    options=["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti/Attaccanti"],
+                    key="filtro_macro_reparto"
+                )
             with col_f2:
-                ruolo_specifico = st.selectbox("🎯 Ruolo Mantra:", options=LISTA_RUOLI_MANTRA)
+                ruolo_specifico = st.selectbox(
+                    "🎯 Ruolo Mantra:", 
+                    options=LISTA_RUOLI_MANTRA,
+                    key="filtro_ruolo_specifico"
+                )
             with col_f3:
-                cerca_nome = st.text_input("🔎 Cerca Nome:")
+                cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome")
             with col_f4:
-                mostra_anche_venduti = st.checkbox("👁️ Mostra Venduti", value=False)
+                mostra_anche_venduti = st.checkbox("👁️ Mostra Venduti", value=False, key="filtro_mostra_venduti")
             with col_f5:
-                solo_occasioni = st.checkbox("🔥 Solo Affari", value=False)
+                solo_occasioni = st.checkbox("🔥 Solo Affari", value=False, key="filtro_solo_occasioni")
 
             df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
             
             if solo_occasioni:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
+
+            # APPLICAZIONE FILTRI SELECTBOX (Reparto e Ruolo Specifico)
+            if macro_reparto != "Tutti":
+                ruoli_rep = MAPPA_REPARTI.get(macro_reparto, [])
+                df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: any(r in str(x).upper() for r in ruoli_rep))]
+
+            if ruolo_specifico != "Tutti":
+                df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo_specifico) + r'\b', case=False, na=False)]
+
+            if cerca_nome:
+                df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
 
             # ORDINAMENTO ALFABETICO A-Z
             if nome_col in df_filtrato.columns:
@@ -492,6 +510,7 @@ if df is not None:
                     tags_list.extend([t.strip() for t in str(row[note_col]).split(',')])
                 if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
                     tags_list.append("🔥 AFFARE")
+                
                 tags_html = "".join([f'<span class="tag-pill">{t}</span> ' for t in tags_list])
                 col_bg = get_ruolo_colore(g_rm)
                 
@@ -562,7 +581,6 @@ if df is not None:
                 st.info("Nessun giocatore acquistato finora. Acquista i tuoi giocatori dalla scheda Listone!")
 
         # ------------------------------------------
-        # ------------------------------------------
         # 🤝 TAB 3: TUTTI I VENDUTI (ROSA GENERALE)
         # ------------------------------------------
         with tab_venduti:
@@ -578,15 +596,12 @@ if df is not None:
                 st.markdown("### 🗑️ Correggi Errore Globale")
                 st.caption("Filtra inserendo le iniziali del giocatore per aggiornare subito il menu a tendina.")
                 
-                # 1. Campo per inserire le iniziali o parte del nome
                 cerca_venduto = st.text_input("🔎 Filtra per iniziali o nome:", key="search_venduti", placeholder="Es. Laut, Kva, Dy...")
 
-                # 2. Estrazione e filtraggio dinamico della lista dei 300 venduti
                 lista_tutti = sorted([v["Nome"] for v in st.session_state.tutti_venduti])
                 if cerca_venduto:
                     lista_tutti = [n for n in lista_tutti if cerca_venduto.lower() in n.lower()]
 
-                # 3. Menu a tendina e pulsante di annullamento
                 if lista_tutti:
                     col_del_v1, col_del_v2 = st.columns([3, 1])
                     with col_del_v1:
