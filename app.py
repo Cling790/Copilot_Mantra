@@ -58,6 +58,16 @@ st.markdown("""
         text-transform: uppercase;
     }
     
+    .tit-pill {
+        background-color: #1e293b;
+        color: #f1c40f;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 5px;
+        letter-spacing: 1px;
+    }
+
     .tag-pill {
         background-color: #232936;
         color: #a0aec0;
@@ -276,6 +286,7 @@ if df is not None:
         tit_col = next((c for c in colonne if str(c).lower() in ['titolarità', 'titolarita', 'tit', 'status']), None)
         fascia_col = next((c for c in colonne if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
         rig_col = next((c for c in colonne if str(c).lower() in ['rigorista', 'rigoristi', 'rig']), None)
+        note_col = next((c for c in colonne if str(c).lower() in ['note', 'caratteristiche', 'skill']), None)
 
         miei_nomi = {p['Nome']: p['Prezzo'] for p in st.session_state.rosa}
         venduti_dict = {v['Nome']: v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
@@ -317,14 +328,21 @@ if df is not None:
                 g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
                 val_fvm = int(row[valore_col]) if (valore_col and pd.notna(row[valore_col])) else 1
                 
+                # Stelle Titolarità
                 tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
-                stelle = "★" * min(max(tit_val, 1), 5)
+                tit_val = min(max(tit_val, 1), 5)
+                stelle = "★" * tit_val + "☆" * (5 - tit_val)
 
-                tags_html = ""
-                if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]) != '-':
-                    tags_html += f'<span class="tag-pill">{row[fascia_col]}</span> '
-                if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]) in ['⚽', 'SI', '1']:
-                    tags_html += '<span class="tag-pill">Rigorista</span> '
+                # Tag Sotto al Nome (Fascia, Rig, Note)
+                tags_list = []
+                if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']:
+                    tags_list.append(str(row[fascia_col]).strip())
+                if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
+                    tags_list.append("Rig")
+                if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
+                    tags_list.extend([t.strip() for t in str(row[note_col]).split(',')])
+
+                tags_html = "".join([f'<span class="tag-pill">{t}</span> ' for t in tags_list])
 
                 col_bg = get_ruolo_colore(g_rm)
                 
@@ -343,7 +361,7 @@ if df is not None:
 <div>
 <div style="display:flex; align-items:center; gap:8px;">
 <span class="team-pill">{g_squadra}</span>
-<span style="font-size:11px; color:#f1c40f;">{stelle}</span>
+<span class="tit-pill">{stelle}</span>
 {stato_tag}
 </div>
 <div style="font-size:18px; font-weight:700; margin:2px 0;">{g_nome}</div>
@@ -369,7 +387,6 @@ if df is not None:
                 gsq = g_sel[squadra_col] if squadra_col in g_sel else "-"
                 v_base = float(g_sel[valore_col]) if (valore_col and pd.notna(g_sel[valore_col])) else 1
                 p_stim = max(1, round(v_base * coeff_inflazione))
-                rep_g = get_reparto(grm)
 
                 st.markdown(f"### ⚡ Gestione Asta per: **{gn}** ({gsq} - {grm})")
                 
