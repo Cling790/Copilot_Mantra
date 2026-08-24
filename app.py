@@ -11,87 +11,72 @@ st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 # ==========================================
 st.markdown("""
 <style>
-/* 1. SELEZIONA SOLO LE RIGHE GIOCATORI E BLOCCA L'A-CAPO SU MOBILE */
-div[data-testid="stHorizontalBlock"]:has(.player-row-marker) {
+/* Contenitore unificato della riga giocatore (perfetto per mobile) */
+.player-row-container {
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
     background-color: #1a1b20 !important;
     border: 1px solid #343a40 !important;
     border-radius: 6px !important;
-    padding: 6px 4px !important;
+    padding: 6px 8px !important;
     margin-bottom: 6px !important;
-    align-items: center !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    gap: 4px !important; /* Distanza fissa tra le colonne */
+    gap: 6px !important;
 }
 
-/* 2. COLONNA 1: INFO GIOCATORE (Si espande/restringe dinamicamente prendendo lo spazio rimasto) */
-div[data-testid="stHorizontalBlock"]:has(.player-row-marker) > div[data-testid="column"]:nth-child(1) {
-    flex: 1 1 0% !important; 
-    width: auto !important;
-    min-width: 0 !important; /* Fondamentale per far tagliare il testo lungo (ellipsis) */
-    padding: 0 !important;
+/* Sezione Sinistra (Info: Ruolo, Nome, Squadra, Stelle, Tag) */
+.player-info-side {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    overflow: hidden !important;
 }
 
-/* 3. COLONNA 2: TASTO CHIAMA (Larghezza fissa e bloccata a 68px) */
-div[data-testid="stHorizontalBlock"]:has(.player-row-marker) > div[data-testid="column"]:nth-child(2) {
-    flex: 0 0 68px !important;
-    width: 68px !important;
-    min-width: 68px !important;
-    padding: 0 !important;
+/* Sezione Destra (Bottone Chiama + FVM affiancati) */
+.player-action-side {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 5px !important;
+    flex-shrink: 0 !important;
 }
 
-/* 4. COLONNA 3: BADGE FVM (Larghezza fissa e bloccata a 45px) */
-div[data-testid="stHorizontalBlock"]:has(.player-row-marker) > div[data-testid="column"]:nth-child(3) {
-    flex: 0 0 45px !important;
-    width: 45px !important;
-    min-width: 45px !important;
-    padding: 0 !important;
-}
-
-/* --- STILI DEL CONTENUTO --- */
+/* Elementi interni */
 .role-circle {
     min-width: 20px; width: 20px; height: 20px;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: 8px; font-weight: 800; color: #ffffff !important; flex-shrink: 0;
 }
 .player-name-text {
-    font-size: 13px; font-weight: 700; color: #ffffff !important;
+    font-size: 12px; font-weight: 700; color: #ffffff !important;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .team-badge {
-    font-size: 9px; font-weight: 700; background: #343a40; color: #e0e0e0 !important;
-    padding: 1px 4px; border-radius: 3px; flex-shrink: 0;
+    font-size: 8px; font-weight: 700; background: #343a40; color: #e0e0e0 !important;
+    padding: 1px 3px; border-radius: 3px; flex-shrink: 0;
 }
-.stars-text { font-size: 9px; color: #f1c40f !important; flex-shrink: 0; letter-spacing: -1px; }
+.stars-text { font-size: 8px; color: #f1c40f !important; flex-shrink: 0; letter-spacing: -1px; }
 
-/* --- TAG INFERIORI --- */
+/* Tag inferiori */
 .tag-micro {
-    font-size: 8px; padding: 1px 4px; border-radius: 3px; background: #2b2c34;
+    font-size: 7px; padding: 1px 3px; border-radius: 3px; background: #2b2c34;
     color: #b0b0b0 !important; border: 1px solid #3d3e48; white-space: nowrap;
 }
 .tag-mio-style { background: #0055ff !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-venduto-style { background: #c0392b !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-affare-style { background: #d35400 !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 
-/* --- BOTTONE CHIAMA ULTRA-COMPATTO --- */
-div[data-testid="stHorizontalBlock"]:has(.player-row-marker) div[data-testid="stButton"] button {
-    padding: 0px !important;
-    font-size: 10px !important; font-weight: 800 !important;
-    height: 28px !important; min-height: 28px !important;
-    border-radius: 4px !important;
-    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
-    color: #ffffff !important; border: none !important;
-    width: 100% !important; white-space: nowrap !important;
-}
-
-/* --- BADGE FVM COMPATTO --- */
-.fvm-badge {
-    font-size: 10px; font-weight: 700; background: #0f381e; color: #2ecc71 !important;
-    border: 1px solid #27ae60; padding: 3px 0px; border-radius: 4px;
-    text-align: center; white-space: nowrap; width: 100%;
+/* Badge FVM fisso a destra */
+.fvm-badge-custom {
+    font-size: 9px; font-weight: 700; background: #0f381e; color: #2ecc71 !important;
+    border: 1px solid #27ae60; padding: 5px 6px; border-radius: 4px;
+    text-align: center; white-space: nowrap;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -522,31 +507,33 @@ if df is not None:
                 tags_html = "".join(tags_list)
                 col_bg = get_ruolo_colore(g_rm)
 
-                # Le percentuali qui in Python ora sono ignorate dal CSS che forza le larghezze fisse perfette
-                col_info, col_btn, col_fvm = st.columns([0.6, 0.2, 0.2], vertical_alignment="center")
+                # Usiamo colonne piccolissime solo per affiancare il bottone e il badge senza l'incolonnamento nativo problematico
+                c_info, c_btn, c_fvm = st.columns([0.62, 0.20, 0.18], vertical_alignment="center")
 
-                with col_info:
+                with c_info:
                     st.markdown(
-                        f'<div class="player-row-marker" style="display: flex; flex-direction: column; gap: 3px; overflow: hidden; width: 100%; min-width: 0;">'
-                        f'  <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; width: 100%;">'
-                        f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
-                        f'    <span class="player-name-text">{g_nome}</span>'
-                        f'    <span class="team-badge">{g_squadra}</span>'
-                        f'    <span class="stars-text">{stelle}</span>'
-                        f'  </div>'
-                        f'  <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; width: 100%;">'
-                        f'    {tags_html}'
+                        f'<div class="player-row-container" style="margin-bottom: 0px !important;">'
+                        f'  <div class="player-info-side">'
+                        f'    <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap;">'
+                        f'      <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
+                        f'      <span class="player-name-text">{g_nome}</span>'
+                        f'      <span class="team-badge">{g_squadra}</span>'
+                        f'      <span class="stars-text">{stelle}</span>'
+                        f'    </div>'
+                        f'    <div style="display: flex; align-items: center; gap: 3px; overflow: hidden; white-space: nowrap;">'
+                        f'      {tags_html}'
+                        f'    </div>'
                         f'  </div>'
                         f'</div>',
                         unsafe_allow_html=True
                     )
 
-                with col_btn:
+                with c_btn:
                     if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}"):
                         mostra_modal_chiamata(row.to_dict())
 
-                with col_fvm:
-                    st.markdown(f'<div class="fvm-badge">{val_fvm} FVM</div>', unsafe_allow_html=True)
+                with c_fvm:
+                    st.markdown(f'<div class="fvm-badge-custom">{val_fvm} FVM</div>', unsafe_allow_html=True)
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
