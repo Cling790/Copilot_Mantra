@@ -12,39 +12,54 @@ st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 st.markdown("""
 <style>
 /* 1. SELEZIONA SOLO LE RIGHE GIOCATORI E BLOCCA L'A-CAPO SU MOBILE */
-/* Il :has(.player-row-marker) impedisce che questo codice rompa altre parti dell'app */
 div[data-testid="stHorizontalBlock"]:has(.player-row-marker) {
     display: flex !important;
-    flex-direction: row !important;      /* Obbliga sempre la riga orizzontale */
-    flex-wrap: nowrap !important;        /* Impedisce di andare a capo */
-    background-color: #1a1b20 !important;/* Colore Sfondo UNICO Nero per tutta la riga */
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    background-color: #1a1b20 !important;
     border: 1px solid #343a40 !important;
-    border-radius: 8px !important;
+    border-radius: 6px !important;
     padding: 6px 4px !important;
     margin-bottom: 6px !important;
     align-items: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 4px !important; /* Distanza fissa tra le colonne */
 }
 
-/* 2. FORZA LE PERCENTUALI DELLE COLONNE ANCHE SU SMARTPHONE */
+/* 2. COLONNA 1: INFO GIOCATORE (Si espande/restringe dinamicamente prendendo lo spazio rimasto) */
 div[data-testid="stHorizontalBlock"]:has(.player-row-marker) > div[data-testid="column"]:nth-child(1) {
-    width: 53% !important; flex: 0 0 53% !important; min-width: 0 !important; padding: 0 2px !important;
-}
-div[data-testid="stHorizontalBlock"]:has(.player-row-marker) > div[data-testid="column"]:nth-child(2) {
-    width: 27% !important; flex: 0 0 27% !important; min-width: 0 !important; padding: 0 2px !important;
-}
-div[data-testid="stHorizontalBlock"]:has(.player-row-marker) > div[data-testid="column"]:nth-child(3) {
-    width: 20% !important; flex: 0 0 20% !important; min-width: 0 !important; padding: 0 2px !important;
+    flex: 1 1 0% !important; 
+    width: auto !important;
+    min-width: 0 !important; /* Fondamentale per far tagliare il testo lungo (ellipsis) */
+    padding: 0 !important;
 }
 
-/* 3. STILI DEL CONTENUTO */
+/* 3. COLONNA 2: TASTO CHIAMA (Larghezza fissa e bloccata a 68px) */
+div[data-testid="stHorizontalBlock"]:has(.player-row-marker) > div[data-testid="column"]:nth-child(2) {
+    flex: 0 0 68px !important;
+    width: 68px !important;
+    min-width: 68px !important;
+    padding: 0 !important;
+}
+
+/* 4. COLONNA 3: BADGE FVM (Larghezza fissa e bloccata a 45px) */
+div[data-testid="stHorizontalBlock"]:has(.player-row-marker) > div[data-testid="column"]:nth-child(3) {
+    flex: 0 0 45px !important;
+    width: 45px !important;
+    min-width: 45px !important;
+    padding: 0 !important;
+}
+
+/* --- STILI DEL CONTENUTO --- */
 .role-circle {
-    min-width: 22px; width: 22px; height: 22px;
+    min-width: 20px; width: 20px; height: 20px;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 9px; font-weight: 800; color: #ffffff !important; flex-shrink: 0;
+    font-size: 8px; font-weight: 800; color: #ffffff !important; flex-shrink: 0;
 }
 .player-name-text {
     font-size: 13px; font-weight: 700; color: #ffffff !important;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .team-badge {
     font-size: 9px; font-weight: 700; background: #343a40; color: #e0e0e0 !important;
@@ -52,7 +67,7 @@ div[data-testid="stHorizontalBlock"]:has(.player-row-marker) > div[data-testid="
 }
 .stars-text { font-size: 9px; color: #f1c40f !important; flex-shrink: 0; letter-spacing: -1px; }
 
-/* 4. TAG INFERIORI */
+/* --- TAG INFERIORI --- */
 .tag-micro {
     font-size: 8px; padding: 1px 4px; border-radius: 3px; background: #2b2c34;
     color: #b0b0b0 !important; border: 1px solid #3d3e48; white-space: nowrap;
@@ -61,20 +76,21 @@ div[data-testid="stHorizontalBlock"]:has(.player-row-marker) > div[data-testid="
 .tag-venduto-style { background: #c0392b !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-affare-style { background: #d35400 !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 
-/* 5. TASTO E BADGE ADATTATI ALLO SPAZIO */
+/* --- BOTTONE CHIAMA ULTRA-COMPATTO --- */
 div[data-testid="stHorizontalBlock"]:has(.player-row-marker) div[data-testid="stButton"] button {
-    padding: 0 !important;
-    font-size: 11px !important; font-weight: 800 !important;
-    height: 30px !important; min-height: 30px !important;
-    border-radius: 5px !important;
+    padding: 0px !important;
+    font-size: 10px !important; font-weight: 800 !important;
+    height: 28px !important; min-height: 28px !important;
+    border-radius: 4px !important;
     background: linear-gradient(135deg, #ff9800, #f57c00) !important;
     color: #ffffff !important; border: none !important;
     width: 100% !important; white-space: nowrap !important;
 }
 
+/* --- BADGE FVM COMPATTO --- */
 .fvm-badge {
-    font-size: 11px; font-weight: 700; background: #0f381e; color: #2ecc71 !important;
-    border: 1px solid #27ae60; padding: 4px 0px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; background: #0f381e; color: #2ecc71 !important;
+    border: 1px solid #27ae60; padding: 3px 0px; border-radius: 4px;
     text-align: center; white-space: nowrap; width: 100%;
 }
 </style>
@@ -506,20 +522,19 @@ if df is not None:
                 tags_html = "".join(tags_list)
                 col_bg = get_ruolo_colore(g_rm)
 
-                # Tre colonne bloccate forzatamente da CSS
-                col_info, col_btn, col_fvm = st.columns([0.53, 0.27, 0.20], vertical_alignment="center")
+                # Le percentuali qui in Python ora sono ignorate dal CSS che forza le larghezze fisse perfette
+                col_info, col_btn, col_fvm = st.columns([0.6, 0.2, 0.2], vertical_alignment="center")
 
                 with col_info:
-                    # NOTA BENE: Questo "player-row-marker" attiva il CSS magico che compatta la riga
                     st.markdown(
-                        f'<div class="player-row-marker" style="display: flex; flex-direction: column; gap: 3px; overflow: hidden;">'
-                        f'  <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap;">'
+                        f'<div class="player-row-marker" style="display: flex; flex-direction: column; gap: 3px; overflow: hidden; width: 100%; min-width: 0;">'
+                        f'  <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; width: 100%;">'
                         f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
                         f'    <span class="player-name-text">{g_nome}</span>'
                         f'    <span class="team-badge">{g_squadra}</span>'
                         f'    <span class="stars-text">{stelle}</span>'
                         f'  </div>'
-                        f'  <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap;">'
+                        f'  <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; width: 100%;">'
                         f'    {tags_html}'
                         f'  </div>'
                         f'</div>',
