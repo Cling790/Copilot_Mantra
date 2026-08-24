@@ -212,7 +212,7 @@ if not st.session_state.autenticato:
 # ⚽ MAPPATURE RUOLI E REPARTI SEPARATI
 # ==========================================
 MAPPA_REPARTI = {
-    'Portieri': ['POR', 'P'],
+    'Portieri': ['POR'],
     'Difensori': ['DD', 'DS', 'DC', 'B'],
     'Centrocampisti': ['C', 'M', 'E'],
     'Trequartisti': ['T', 'W'],
