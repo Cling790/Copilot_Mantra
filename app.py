@@ -11,109 +11,115 @@ st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 # ==========================================
 st.markdown("""
 <style>
-/* Riduzione drastica dei margini verticali nativi di Streamlit */
-div[data-testid="stVerticalBlock"] > div {
-    gap: 0px !important;
-    padding-bottom: 2px !important;
+/* Applica lo stile Card direttamente al contenitore delle colonne di Streamlit per bloccare il responsive wrap su mobile */
+div[data-testid="stHorizontalBlock"] {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    background-color: #1e1e24 !important;
+    border: 1px solid #343a40 !important;
+    border-radius: 6px !important;
+    padding: 5px 6px !important;
+    margin-bottom: 4px !important;
 }
 
+/* Azzera i margini nativi delle singole colonne */
 div[data-testid="column"] {
-    padding: 0px 2px !important;
-}
-
-/* Card Scura Ultra-Compatta (Garantisce visibilità sia in Tema Chiaro che Scuro) */
-.player-row-card {
-    background-color: #1e1e24;
-    border: 1px solid #343a40;
-    border-radius: 6px;
-    padding: 4px 8px;
-    margin-bottom: 3px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-/* Riga 1: Ruolo | Nome | Squadra | Stelle | FVM */
-.row-top {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    overflow: hidden;
+    min-width: 0 !important;
+    padding: 0px 1px !important;
 }
 
 /* Cerchio Ruolo Colorato */
 .role-circle {
-    min-width: 25px;
-    width: 25px;
-    height: 25px;
+    min-width: 23px;
+    width: 23px;
+    height: 23px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 800;
     color: #ffffff !important;
     flex-shrink: 0;
 }
 
-/* Nome del giocatore (Bianco nitido sempre visibile sulla card scura) */
+/* Nome Giocatore */
 .player-name-text {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: #ffffff !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 140px;
+    max-width: 85px;
 }
 
 /* Squadra */
 .team-badge {
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
     background: #343a40;
-    color: #e0e0e0 !important;
-    padding: 1px 5px;
+    color: #cccccc !important;
+    padding: 1px 3px;
     border-radius: 3px;
     flex-shrink: 0;
 }
 
-/* Stelle */
+/* Stelle Titolarità */
 .stars-text {
-    font-size: 10px;
+    font-size: 9px;
     color: #f1c40f !important;
     flex-shrink: 0;
     letter-spacing: -1px;
 }
 
-/* Badge FVM M (Spinto a destra) */
+/* Tasto Chiama compatto posizionato al centro */
+div[data-testid="stButton"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+div[data-testid="stButton"] > button {
+    padding: 2px 2px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    height: 25px !important;
+    min-height: 25px !important;
+    line-height: 1 !important;
+    border-radius: 4px !important;
+    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
+    color: #ffffff !important;
+    border: none !important;
+    width: 100% !important;
+    white-space: nowrap !important;
+}
+
+div[data-testid="stButton"] > button:hover {
+    background: linear-gradient(135deg, #ffa726, #fb8c00) !important;
+    color: #ffffff !important;
+}
+
+/* Badge FVM M */
 .fvm-badge {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
     background: #0f381e;
     color: #2ecc71 !important;
     border: 1px solid #27ae60;
-    padding: 1px 5px;
+    padding: 2px 4px;
     border-radius: 4px;
-    margin-left: auto;
-    flex-shrink: 0;
+    text-align: center;
+    white-space: nowrap;
 }
 
-/* Riga 2: Tag Piccoli (Qt.a, Fascia, Rigorista) sotto il nome */
-.row-bottom {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-wrap: wrap;
-    margin-top: 2px;
-    padding-left: 31px; /* Allineato sotto il nome */
-}
-
+/* Tag Micro (Riga Inferiore) */
 .tag-micro {
     font-size: 8px;
-    font-weight: 600;
-    padding: 1px 4px;
+    padding: 0px 3px;
     border-radius: 3px;
     background: #2b2c34;
     color: #b0b0b0 !important;
@@ -125,46 +131,18 @@ div[data-testid="column"] {
     background: #0055ff !important;
     color: #ffffff !important;
     font-weight: bold;
-    border: none !important;
 }
 
 .tag-venduto-style {
     background: #c0392b !important;
     color: #ffffff !important;
     font-weight: bold;
-    border: none !important;
 }
 
 .tag-affare-style {
     background: #d35400 !important;
     color: #ffffff !important;
     font-weight: bold;
-    border: none !important;
-}
-
-/* Tasto Chiama ultra-compatto */
-div[data-testid="stButton"] {
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-div[data-testid="stButton"] > button {
-    padding: 2px 4px !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    height: 31px !important;
-    min-height: 31px !important;
-    line-height: 1 !important;
-    border-radius: 5px !important;
-    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
-    color: #ffffff !important;
-    border: none !important;
-    width: 100% !important;
-}
-
-div[data-testid="stButton"] > button:hover {
-    background: linear-gradient(135deg, #ffa726, #fb8c00) !important;
-    color: #ffffff !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -558,66 +536,68 @@ if df is not None:
                 df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
             df_filtrato = df_filtrato.head(40)
-            st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
+st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
 
-            for _, row in df_filtrato.iterrows():
-                g_nome = row[nome_col]
-                g_rm = str(row[rm_col]) if rm_col in row else "N/A"
-                g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
-                
-                val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
-                val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
+for _, row in df_filtrato.iterrows():
+    g_nome = row[nome_col]
+    g_rm = str(row[rm_col]) if rm_col in row else "N/A"
+    g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
+    
+    val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
+    val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
 
-                tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
-                tit_val = min(max(tit_val, 1), 5)
-                stelle = "★" * tit_val + "☆" * (5 - tit_val)
+    tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
+    tit_val = min(max(tit_val, 1), 5)
+    stelle = "★" * tit_val + "☆" * (5 - tit_val)
 
-                # Tag inferiori micro
-                tags_list = []
-                if val_qta is not None:
-                    tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
-                if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']:
-                    tags_list.append(f'<span class="tag-micro">{str(row[fascia_col]).strip()}</span>')
-                if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
-                    tags_list.append('<span class="tag-micro">⚽ Rig</span>')
-                if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
-                    for t in str(row[note_col]).split(','):
-                        tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
-                if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
-                    tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
-                
-                # Tag Stato Acquisto (Mio / Venduto)
-                if g_nome in miei_nomi:
-                    tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
-                elif g_nome in venduti_dict:
-                    tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
+    # Tag inferiori micro
+    tags_list = []
+    if val_qta is not None:
+        tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
+    if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']:
+        tags_list.append(f'<span class="tag-micro">{str(row[fascia_col]).strip()}</span>')
+    if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
+        tags_list.append('<span class="tag-micro">⚽ Rig</span>')
+    if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
+        for t in str(row[note_col]).split(','):
+            tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
+    if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
+        tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
+    
+    # Tag Stato Acquisto (Mio / Venduto)
+    if g_nome in miei_nomi:
+        tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
+    elif g_nome in venduti_dict:
+        tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
 
-                tags_html = "".join(tags_list)
-                col_bg = get_ruolo_colore(g_rm)
+    tags_html = "".join(tags_list)
+    col_bg = get_ruolo_colore(g_rm)
 
-                # Layout a colonne compatto [Card Info 86%] [Bottone 14%]
-                col_left, col_right = st.columns([0.86, 0.14], vertical_alignment="center")
+    # Layout a 3 colonne: [Info 52%] | [Tasto Chiama 28%] | [FVM 20%]
+    col_info, col_btn, col_fvm = st.columns([0.52, 0.28, 0.20], vertical_alignment="center")
 
-                with col_left:
-                    card_html = (
-                        f'<div class="player-row-card">'
-                        f'  <div class="row-top">'
-                        f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
-                        f'    <span class="player-name-text">{g_nome}</span>'
-                        f'    <span class="team-badge">{g_squadra}</span>'
-                        f'    <span class="stars-text">{stelle}</span>'
-                        f'    <span class="fvm-badge">{val_fvm} FVM</span>'
-                        f'  </div>'
-                        f'  <div class="row-bottom">'
-                        f'    {tags_html}'
-                        f'  </div>'
-                        f'</div>'
-                    )
-                    st.markdown(card_html, unsafe_allow_html=True)
+    with col_info:
+        card_html = (
+            f'<div class="player-row-card">'
+            f'  <div class="row-top">'
+            f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
+            f'    <span class="player-name-text">{g_nome}</span>'
+            f'    <span class="team-badge">{g_squadra}</span>'
+            f'    <span class="stars-text">{stelle}</span>'
+            f'  </div>'
+            f'  <div class="row-bottom">'
+            f'    {tags_html}'
+            f'  </div>'
+            f'</div>'
+        )
+        st.markdown(card_html, unsafe_allow_html=True)
 
-                with col_right:
-                    if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}"):
-                        mostra_modal_chiamata(row.to_dict())
+    with col_btn:
+        if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}"):
+            mostra_modal_chiamata(row.to_dict())
+
+    with col_fvm:
+        st.markdown(f'<div class="fvm-badge">{val_fvm} FVM</div>', unsafe_allow_html=True)
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
