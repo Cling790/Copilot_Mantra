@@ -11,72 +11,56 @@ st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 # ==========================================
 st.markdown("""
 <style>
-/* Contenitore unificato della riga giocatore (perfetto per mobile) */
-.player-row-container {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    justify-content: space-between !important;
+/* Riga nera principale del giocatore */
+.player-main-card {
     background-color: #1a1b20 !important;
     border: 1px solid #343a40 !important;
-    border-radius: 6px !important;
-    padding: 6px 8px !important;
-    margin-bottom: 6px !important;
+    border-radius: 8px !important;
+    padding: 8px 10px !important;
+    margin-bottom: 3px !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    gap: 6px !important;
-}
-
-/* Sezione Sinistra (Info: Ruolo, Nome, Squadra, Stelle, Tag) */
-.player-info-side {
     display: flex !important;
     flex-direction: column !important;
-    gap: 3px !important;
-    min-width: 0 !important;
-    flex: 1 1 auto !important;
-    overflow: hidden !important;
+    gap: 4px !important;
 }
 
-/* Sezione Destra (Bottone Chiama + FVM affiancati) */
-.player-action-side {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 5px !important;
-    flex-shrink: 0 !important;
-}
-
-/* Elementi interni */
+/* Cerchio Ruolo */
 .role-circle {
-    min-width: 20px; width: 20px; height: 20px;
+    min-width: 22px; width: 22px; height: 22px;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 8px; font-weight: 800; color: #ffffff !important; flex-shrink: 0;
+    font-size: 9px; font-weight: 800; color: #ffffff !important; flex-shrink: 0;
 }
-.player-name-text {
-    font-size: 12px; font-weight: 700; color: #ffffff !important;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.team-badge {
-    font-size: 8px; font-weight: 700; background: #343a40; color: #e0e0e0 !important;
-    padding: 1px 3px; border-radius: 3px; flex-shrink: 0;
-}
-.stars-text { font-size: 8px; color: #f1c40f !important; flex-shrink: 0; letter-spacing: -1px; }
 
-/* Tag inferiori */
+/* Nome Giocatore */
+.player-name-text {
+    font-size: 13px; font-weight: 700; color: #ffffff !important;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1;
+}
+
+/* Badge Squadra */
+.team-badge {
+    font-size: 9px; font-weight: 700; background: #343a40; color: #e0e0e0 !important;
+    padding: 1px 4px; border-radius: 3px; flex-shrink: 0;
+}
+
+/* Stelle */
+.stars-text { font-size: 9px; color: #f1c40f !important; flex-shrink: 0; letter-spacing: -1px; }
+
+/* Tag micro inferiori */
 .tag-micro {
-    font-size: 7px; padding: 1px 3px; border-radius: 3px; background: #2b2c34;
+    font-size: 8px; padding: 1px 4px; border-radius: 3px; background: #2b2c34;
     color: #b0b0b0 !important; border: 1px solid #3d3e48; white-space: nowrap;
 }
 .tag-mio-style { background: #0055ff !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-venduto-style { background: #c0392b !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-affare-style { background: #d35400 !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 
-/* Badge FVM fisso a destra */
-.fvm-badge-custom {
-    font-size: 9px; font-weight: 700; background: #0f381e; color: #2ecc71 !important;
-    border: 1px solid #27ae60; padding: 5px 6px; border-radius: 4px;
-    text-align: center; white-space: nowrap;
+/* Badge FVM integrato in alto a destra nella riga nera */
+.fvm-badge-right {
+    font-size: 10px; font-weight: 700; background: #0f381e; color: #2ecc71 !important;
+    border: 1px solid #27ae60; padding: 3px 6px; border-radius: 4px;
+    text-align: center; white-space: nowrap; flex-shrink: 0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -467,68 +451,69 @@ if df is not None:
 
             # ORDINAMENTO ALFABETICO A-Z
             if nome_col in df_filtrato.columns:
-                df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
+    df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
-            df_filtrato = df_filtrato.head(40)
-            st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
+df_filtrato = df_filtrato.head(40)
+st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
 
-            for _, row in df_filtrato.iterrows():
-                g_nome = row[nome_col]
-                g_rm = str(row[rm_col]) if rm_col in row else "N/A"
-                g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
-                
-                val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
-                val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
+for _, row in df_filtrato.iterrows():
+    g_nome = row[nome_col]
+    g_rm = str(row[rm_col]) if rm_col in row else "N/A"
+    g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
+    
+    val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
+    val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
 
-                tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
-                tit_val = min(max(tit_val, 1), 5)
-                stelle = "★" * tit_val + "☆" * (5 - tit_val)
+    tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
+    tit_val = min(max(tit_val, 1), 5)
+    stelle = "★" * tit_val + "☆" * (5 - tit_val)
 
-                # Tag inferiori
-                tags_list = []
-                if val_qta is not None:
-                    tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
-                if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']:
-                    tags_list.append(f'<span class="tag-micro">{str(row[fascia_col]).strip()}</span>')
-                if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
-                    tags_list.append('<span class="tag-micro">⚽ Rig</span>')
-                if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
-                    for t in str(row[note_col]).split(','):
-                        tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
-                if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
-                    tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
-                
-                if g_nome in miei_nomi:
-                    tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
-                elif g_nome in venduti_dict:
-                    tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
+    # Tag inferiori
+    tags_list = []
+    if val_qta is not None:
+        tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
+    if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']:
+        tags_list.append(f'<span class="tag-micro">{str(row[fascia_col]).strip()}</span>')
+    if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
+        tags_list.append('<span class="tag-micro">⚽ Rig</span>')
+    if note_col and pd.notna(row[note_col]) and str(note_col).strip() not in ['-', '']:
+        for t in str(row[note_col]).split(','):
+            tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
+    if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
+        tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
+    
+    if g_nome in miei_nomi:
+        tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
+    elif g_nome in venduti_dict:
+        tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
 
-                tags_html = "".join(tags_list)
-                col_bg = get_ruolo_colore(g_rm)
+    tags_html = "".join(tags_list)
+    col_bg = get_ruolo_colore(g_rm)
 
-                card_html = (
-                    f'<div style="background-color: #1a1b20; border: 1px solid #343a40; border-radius: 8px; padding: 8px; margin-bottom: 2px; width: 100%; box-sizing: border-box;">'
-                    f'  <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; margin-bottom: 4px;">'
-                    f'    <div style="min-width: 22px; width: 22px; height: 22px; border-radius: 50%; background-color: {col_bg}; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: #ffffff; flex-shrink: 0;">{g_rm[:4]}</div>'
-                    f'    <span style="font-size: 13px; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis;">{g_nome}</span>'
-                    f'    <span style="font-size: 9px; font-weight: 700; background: #343a40; color: #e0e0e0; padding: 1px 4px; border-radius: 3px; flex-shrink: 0;">{g_squadra}</span>'
-                    f'    <span style="font-size: 9px; color: #f1c40f; flex-shrink: 0; letter-spacing: -1px;">{stelle}</span>'
-                    f'  </div>'
-                    f'  <div style="display: flex; align-items: center; gap: 4px; overflow-x: auto; white-space: nowrap; padding-bottom: 2px;">'
-                    f'    {tags_html}'
-                    f'  </div>'
-                    f'</div>'
-                )
-                st.markdown(card_html, unsafe_allow_html=True)
+    # Scheda Nera Principale (Nome, Ruolo, Stelle, Tag e FVM a destra)
+    card_html = (
+        f'<div class="player-main-card">'
+        f'  <div style="display: flex; align-items: center; gap: 6px; width: 100%;">'
+        f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
+        f'    <span class="player-name-text">{g_nome}</span>'
+        f'    <span class="team-badge">{g_squadra}</span>'
+        f'    <span class="stars-text">{stelle}</span>'
+        f'    <div class="fvm-badge-right">{val_fvm} FVM</div>'
+        f'  </div>'
+        f'  <div style="display: flex; align-items: center; gap: 4px; overflow-x: auto; white-space: nowrap;">'
+        f'    {tags_html}'
+        f'  </div>'
+        f'</div>'
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
 
-                sub_c1, sub_c2 = st.columns([0.7, 0.3], vertical_alignment="center")
-                with sub_c1:
-                    if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}", use_container_width=True):
-                        mostra_modal_chiamata(row.to_dict())
-                with sub_c2:
-                    st.markdown(f'<div style="font-size: 11px; font-weight: 700; background: #0f381e; color: #2ecc71; border: 1px solid #27ae60; padding: 6px 4px; border-radius: 4px; text-align: center;">{val_fvm} FVM</div>', unsafe_allow_html=True)
-                
-                st.markdown('<div style="margin-bottom: 8px;"></div>', unsafe_allow_html=True)
+    # Tasto Chiama compatto (senza occupare tutta la larghezza)
+    col_btn_left, col_space = st.columns([0.38, 0.62])
+    with col_btn_left:
+        if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}", use_container_width=True):
+            mostra_modal_chiamata(row.to_dict())
+
+    st.markdown('<div style="margin-bottom: 10px;"></div>', unsafe_allow_html=True)
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
