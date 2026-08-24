@@ -22,7 +22,7 @@ st.markdown("""
 
 /* BOTTONE CHIAMA COMPATTO */
 div.stButton > button {
-    min-height: 24px !important;
+    min-height: 32px !important;
     padding-top: 0px !important;
     padding-bottom: 0px !important;
     margin: 0px !important;
@@ -486,10 +486,28 @@ if df is not None:
             if nome_col in df_filtrato.columns:
                 df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
-            df_filtrato = df_filtrato.head(40)
-            st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
+            # --- SISTEMA DI PAGINAZIONE ---
+            tot_risultati = len(df_filtrato)
+            
+            c_pag1, c_pag2 = st.columns([2, 3])
+            with c_pag1:
+                righe_per_pagina = st.selectbox("Righe per pagina:", [50, 100, 200, 500], index=0, key="pag_size")
+            
+            num_pagine = max(1, (tot_risultati // righe_per_pagina) + (1 if tot_risultati % righe_per_pagina > 0 else 0))
+            
+            with c_pag2:
+                if num_pagine > 1:
+                    pagina_corrente = st.number_input(f"Pagina (1 - {num_pagine}):", min_value=1, max_value=num_pagine, value=1, step=1, key="pag_num")
+                else:
+                    pagina_corrente = 1
 
-            for _, row in df_filtrato.iterrows():
+            start_idx = (pagina_corrente - 1) * righe_per_pagina
+            end_idx = start_idx + righe_per_pagina
+            df_pagina = df_filtrato.iloc[start_idx:end_idx]
+
+            st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori filtrati (Pagina {pagina_corrente} di {num_pagine}, A-Z):")
+
+            for _, row in df_pagina.iterrows():
                 g_nome = row[nome_col]
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
                 g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
@@ -536,10 +554,12 @@ if df is not None:
                     f'  </div>'
                     f'</div>'
                 )
-                st.markdown(card_html, unsafe_allow_html=True)
 
-                col_btn_left, col_space = st.columns([0.38, 0.62])
-                with col_btn_left:
+                # DISPOSIZIONE ORIZZONTALE AFFIANCATA (CARD + BOTTONE CHIAMA)
+                c_card, c_btn = st.columns([0.84, 0.16])
+                with c_card:
+                    st.markdown(card_html, unsafe_allow_html=True)
+                with c_btn:
                     if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}", use_container_width=True):
                         mostra_modal_chiamata(row.to_dict())
 
