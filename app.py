@@ -302,7 +302,8 @@ coeff_inflazione = (tot_spesa_uscite / tot_fvm_uscite) if tot_fvm_uscite > 0 els
 def calcola_occasioni(df_completo, tutti_venduti):
     nomi_venduti = set(v['Nome'] for v in tutti_venduti)
     fvm_col = next((c for c in df_completo.columns if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm']), None)
-    df_top = df_completo[pd.to_numeric(df_completo[fvm_col], errors='coerce') >= 12].copy() if fvm_col else df_completo.copy()
+    # MODIFICA: Filtra i giocatori top con FVM >= 20
+    df_top = df_completo[pd.to_numeric(df_completo[fvm_col], errors='coerce') >= 20].copy() if fvm_col else df_completo.copy()
     occasioni_set = set()
     rm_col = next((c for c in df_completo.columns if str(c).upper() == 'RM'), 'RM')
     for ruolo in LISTA_RUOLI_MANTRA[1:]:
@@ -420,7 +421,7 @@ if df is not None:
                 opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
                 ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
 
-            # 3. CHECKBOX CON CONTATORE DINAMICO (UNICO SEGNALE DISCRETO)
+            # 3. CHECKBOX CON CONTATORE DINAMICO
             col_cb1, col_cb2 = st.columns(2)
             with col_cb1: 
                 mostra_anche_venduti = st.checkbox("👁️ Mostra anche Venduti", value=False)
