@@ -352,7 +352,18 @@ st.sidebar.divider()
 st.sidebar.subheader("📁 File caricati")
 file_caricato_m = st.sidebar.file_uploader("Sostituisci Quotazioni", type=["xlsx", "csv"], key="u_main")
 file_caricato_s = st.sidebar.file_uploader("Sostituisci Fasce/Tit/Rig", type=["xlsx", "csv"], key="u_sec")
+st.sidebar.divider()
+st.sidebar.subheader("📁 File caricati")
+file_caricato_m = st.sidebar.file_uploader("Sostituisci Quotazioni", type=["xlsx", "csv"], key="u_main")
+file_caricato_s = st.sidebar.file_uploader("Sostituisci Fasce/Tit/Rig", type=["xlsx", "csv"], key="u_sec")
 
+# --- AGGIUNGI QUI IL PULSANTE DI RESET ---
+st.sidebar.divider()
+if st.sidebar.button("🗑️ Reset Totale Asta", type="secondary", use_container_width=True):
+    st.session_state.rosa = []
+    st.session_state.tutti_venduti = []
+    salva_backup()
+    st.rerun()
 # ==========================================
 # 📑 GESTIONE DELLE TABS (4 TABS)
 # ==========================================
