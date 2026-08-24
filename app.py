@@ -48,11 +48,20 @@ div.stButton > button {
     gap: 3px !important;
 }
 
-/* Cerchio Ruolo */
+/* Badge Ruolo Adattivo (Capsula) per contenere senza tagli i doppi ruoli es. DD,DC */
 .role-circle {
-    min-width: 20px; width: 20px; height: 20px;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 9px; font-weight: 800; color: #ffffff !important; flex-shrink: 0;
+    min-width: 32px; 
+    height: 20px; 
+    padding: 0 5px;
+    border-radius: 6px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    font-size: 9px; 
+    font-weight: 800; 
+    color: #ffffff !important; 
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 /* Nome Giocatore */
@@ -560,7 +569,7 @@ if df is not None:
                 card_html = (
                     f'<div class="player-main-card">'
                     f'  <div style="display: flex; align-items: center; gap: 6px; width: 100%;">'
-                    f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
+                    f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm}</div>'
                     f'    <span class="player-name-text">{g_nome}</span>'
                     f'    <span class="team-badge">{g_squadra}</span>'
                     f'    <span class="stars-text">{stelle}</span>'
@@ -723,8 +732,6 @@ if df is not None:
                         "Giocabile": is_ok
                     })
 
-                col_m1, col_m2 = st.columns([2, 3])
-                
                 ch_mod1, ch_mod2 = st.columns([2, 3])
                 with ch_mod1:
                     df_mod = pd.DataFrame(res_moduli)
