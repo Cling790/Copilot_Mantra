@@ -7,25 +7,26 @@ import os
 st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 
 # ==========================================
-# 🎨 STILI CSS PERSONALIZZATI (FIX DEFINITIVO MOBILE NO-SCROLL)
+# 🎨 STILI CSS PERSONALIZZATI (ISOLATI E AMICI DEL MOBILE)
 # ==========================================
 st.markdown("""
 <style>
-/* 1. AZZERA I MARGINI DI PAGINA STREAMLIT (Causa principale dello scroll mobile) */
+/* 1. AZZERA I MARGINI DI PAGINA STREAMLIT */
 .main .block-container {
-    padding-left: 4px !important;
-    padding-right: 4px !important;
-    padding-top: 2rem !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    padding-top: 1.5rem !important;
     max-width: 100vw !important;
     overflow-x: hidden !important;
 }
 
-/* 2. AZZERA GAP VERTICALI TRA RIGHE */
-[data-testid="stVerticalBlock"] { gap: 2px !important; }
+/* 2. GAP VERTICALI CONTENUTI */
+[data-testid="stVerticalBlock"] { gap: 4px !important; }
 .element-container { margin-bottom: 0px !important; margin-top: 0px !important; }
 
-/* 3. FORZA LA RIGA UNICA SULLE COLONNE */
-[data-testid="stHorizontalBlock"] {
+/* 3. LARGHEZZA RIGIDA SOLO PER LA RIGA CARD GIOCATORE + TASTO FULMINE */
+/* Usa :has(div.player-main-card) per fare in modo che NON rovini i filtri o altre colonne */
+[data-testid="stHorizontalBlock"]:has(div.player-main-card) {
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
@@ -37,27 +38,24 @@ st.markdown("""
     margin-bottom: 3px !important;
 }
 
-/* DISABILITA MIN-WIDTH NATIVO DI STREAMLIT */
-[data-testid="stColumn"], [data-testid="column"] {
-    min-width: 0 !important;
-    padding: 0 !important;
-}
-
-/* COLONNA 1: CARD NERA (Prende esattamente il 100% meno i 46px del tasto+gap) */
-[data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1),
-[data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
+[data-testid="stHorizontalBlock"]:has(div.player-main-card) > [data-testid="stColumn"]:nth-child(1),
+[data-testid="stHorizontalBlock"]:has(div.player-main-card) > [data-testid="column"]:nth-child(1) {
     flex: 1 1 auto !important;
     width: calc(100% - 46px) !important;
     min-width: 0 !important;
 }
 
-/* COLONNA 2: TASTO FULMINE (Fisso a 42px, mai più largo, mai più stretto) */
-[data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2),
-[data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) {
+[data-testid="stHorizontalBlock"]:has(div.player-main-card) > [data-testid="stColumn"]:nth-child(2),
+[data-testid="stHorizontalBlock"]:has(div.player-main-card) > [data-testid="column"]:nth-child(2) {
     flex: 0 0 42px !important;
     width: 42px !important;
     min-width: 42px !important;
     max-width: 42px !important;
+}
+
+/* DISABILITA MIN-WIDTH GENERALE SULLE COLONNE */
+[data-testid="stColumn"], [data-testid="column"] {
+    min-width: 0 !important;
 }
 
 /* CONTENITORE E STILE BOTTONE */
@@ -107,7 +105,7 @@ div.stButton > button {
     white-space: nowrap;
 }
 
-/* Nome Giocatore (con ellipsis se troppo lungo su telefoni piccoli) */
+/* Nome Giocatore */
 .player-name-text {
     font-size: 12px; font-weight: 700; color: #ffffff !important;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
@@ -391,6 +389,7 @@ if df is not None:
                 if st.button("📌 ALTRI", use_container_width=True, key=f"btn_vend_{gn}"):
                     st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
                     salva_backup()
+                    salva_backup()
                     st.rerun()
             with col_b3:
                 if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
@@ -405,15 +404,27 @@ if df is not None:
             def reset_ruolo_callback():
                 st.session_state["filtro_ruolo_specifico"] = "Tutti"
 
-            col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns([2, 2, 2, 1, 1])
-            with col_f1: macro_reparto = st.selectbox("🛡️ Reparto:", ["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti/Attaccanti"], key="filtro_macro_reparto", on_change=reset_ruolo_callback)
+            # 1. CAMPO CERCA NOME (A TUTTO SCHERMO PER FACILITÀ)
+            cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro, Dybala...")
+
+            # 2. REPARTO E RUOLO SU DUE COLONNE SPAZIOSE
+            col_f1, col_f2 = st.columns(2)
+            with col_f1: 
+                macro_reparto = st.selectbox("🛡️ Reparto:", ["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti/Attaccanti"], key="filtro_macro_reparto", on_change=reset_ruolo_callback)
             with col_f2:
                 opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
                 ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
-            with col_f3: cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome")
-            with col_f4: mostra_anche_venduti = st.checkbox("👁️ Mostra Venduti", value=False)
-            with col_f5: solo_occasioni = st.checkbox("🔥 Affari", value=False)
 
+            # 3. CHECKBOX BEN VISIBILI E COMODI DA PREMERE
+            col_cb1, col_cb2 = st.columns(2)
+            with col_cb1: 
+                mostra_anche_venduti = st.checkbox("👁️ Mostra anche Venduti", value=False)
+            with col_cb2: 
+                solo_occasioni = st.checkbox("🔥 Solo Affari / Occasioni", value=False)
+
+            st.divider()
+
+            # APPLICAZIONE FILTRI
             df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
             if solo_occasioni: df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
             if macro_reparto != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
@@ -422,8 +433,8 @@ if df is not None:
             if nome_col in df_filtrato.columns: df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
             tot_risultati = len(df_filtrato)
-            c_pag1, c_pag2 = st.columns([2, 3])
-            with c_pag1: righe_per_pagina = st.selectbox("Righe pagina:", [50, 100, 200, 500], index=0)
+            c_pag1, c_pag2 = st.columns(2)
+            with c_pag1: righe_per_pagina = st.selectbox("Righe per pagina:", [50, 100, 200, 500], index=0)
             num_pagine = max(1, (tot_risultati // righe_per_pagina) + (1 if tot_risultati % righe_per_pagina > 0 else 0))
             with c_pag2: pagina_corrente = st.number_input(f"Pagina (1 - {num_pagine}):", min_value=1, max_value=num_pagine, value=1, step=1) if num_pagine > 1 else 1
 
