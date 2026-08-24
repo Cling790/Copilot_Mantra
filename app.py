@@ -577,30 +577,28 @@ if df is not None:
                 tags_html = "".join(tags_list)
                 col_bg = get_ruolo_colore(g_rm)
 
-                # Layout ultra-compatto: [Card 85%] [Bottone 15%]
-                col_card, col_btn = st.columns([5.5, 1.2], vertical_alignment="center")
+                # Layout a colonne affiancate: [Info Principali 83%] [Tasto Chiama 17%]
+                col_left, col_right = st.columns([0.83, 0.17], vertical_alignment="top")
 
-                with col_card:
-                    card_html = (
-                        f'<div class="player-card-compact">'
-                        f'  <div class="player-main-line">'
-                        f'    <div class="role-badge-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
-                        f'    <span class="player-name">{g_nome}</span>'
-                        f'    <span class="team-pill">{g_squadra}</span>'
-                        f'    <span class="tit-stars">{stelle}</span>'
-                        f'    <span class="fvm-mini">{val_fvm} FVM</span>'
-                        f'  </div>'
-                        f'  <div class="player-sub-line">'
-                        f'    {tags_html}'
-                        f'  </div>'
+                with col_left:
+                    main_line_html = (
+                        f'<div class="player-main-line">'
+                        f'  <div class="role-badge-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
+                        f'  <span class="player-name">{g_nome}</span>'
+                        f'  <span class="team-pill">{g_squadra}</span>'
+                        f'  <span class="tit-stars">{stelle}</span>'
+                        f'  <span class="fvm-mini">{val_fvm} FVM</span>'
+                        f'</div>'
+                        f'<div class="player-sub-line">'
+                        f'  {tags_html}'
                         f'</div>'
                     )
-                    st.markdown(card_html, unsafe_allow_html=True)
+                    st.markdown(main_line_html, unsafe_allow_html=True)
 
-                with col_btn:
+                with col_right:
+                    # Tasto chiama allineato esattamente sulla riga del nome
                     if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}"):
                         mostra_modal_chiamata(row.to_dict())
-
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
