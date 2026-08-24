@@ -415,6 +415,9 @@ if df is not None:
         venduti_dict = {v['Nome']: v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
 
+        # Gestione sicura del valore inflazione
+        c_infl = coeff_inflazione if 'coeff_inflazione' in locals() or 'coeff_inflazione' in globals() else 1.0
+
         # ==========================================
         # 💬 POPUP DIALOG NATIVO (GESTIONE CHIAMATA)
         # ==========================================
@@ -424,7 +427,7 @@ if df is not None:
             grm = str(g_sel[rm_col])
             gsq = str(g_sel[squadra_col])[:3].upper() if squadra_col in g_sel else "-"
             v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1.0
-            p_stim = max(1, round(v_base * coeff_inflazione))
+            p_stim = max(1, round(v_base * c_infl))
 
             st.markdown(f"### **{gn}** ({gsq} - `{grm}`) ")
             st.caption(f"Valore FVM M: **{int(v_base)}** | Prezzo Consigliato: **{p_stim} cr**")
@@ -478,7 +481,7 @@ if df is not None:
             if solo_occasioni:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
 
-            # APPLICAZIONE FILTRI SELECTBOX (Reparto e Ruolo Specifico)
+            # APPLICAZIONE FILTRI SELECTBOX
             if macro_reparto != "Tutti":
                 ruoli_rep = MAPPA_REPARTI.get(macro_reparto, [])
                 df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: any(r in str(x).upper() for r in ruoli_rep))]
@@ -496,10 +499,9 @@ if df is not None:
             df_filtrato = df_filtrato.head(40)
             st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
 
-                for _, row in df_filtrato.iterrows():
+            for _, row in df_filtrato.iterrows():
                 g_nome = row[nome_col]
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
-                g_squadra = str(row[squadra_col])[:3].upper() if me_squadra in row else "SER" if 'squadra_col' in locals() else "SER"
                 g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
                 
                 val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
@@ -530,50 +532,29 @@ if df is not None:
                 elif g_nome in venduti_dict:
                     stato_tag = f'<span class="tag-pill" style="background:#e74c3c; color:white;">VENDUTO ({venduti_dict[g_nome]} cr)</span>'
 
-                # LAYOUT A 3 RIGHE INTEGRATO CON PULSANTE
-                col_card, col_btn = st.columns([4, 1], vertical_alignment="center")
+                col_card, col_btn = st.columns([5, 1])
 
                 with col_card:
-                    card_html = f"""<div class="player-card">
-                        <!-- RIGA 1: TOP (Squadra, Stelle, Tag, Stato) -->
-                        <div class="card-row-top">
-                            <span class="team-pill">{g_squadra}</span>
-                            <span class="tit-pill">{stelle}</span>
-                            {stato_tag}
-                            {tags_html}
-                        </div>
-                        <!-- RIGA 2: MIDDLE (Nome Giocatore) -->
-                        <div class="card-row-middle">
-                            <div class="player-name-title">{g_nome}</div>
-                        </div>
-                        <!-- RIGA 3: BOTTOM (Ruolo a SX, FVM a DX) -->
-                        <div class="card-row-bottom">
-                            <div class="role-pill" style="background-color: {col_bg};">{g_rm}</div>
-                            <div class="fvm-text">FVM M: <b>{val_fvm}</b></div>
-                        </div>
-                    </div>"""
-                    st.markdown(card_html, unsafe_allow_html=True)
-
-                with col_btn:
-                    if st.button("⚡ CHIAMA", key=f"btn_chiama_{g_nome}", type="primary", use_container_width=True):
-                        mostra_modal_chiamata(row.to_dict())
-<div class="player-left">
-<div class="role-badge-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>
-<div>
-<div style="display:flex; align-items:center; gap:8px;">
-<span class="team-pill">{g_squadra}</span>
-<span class="tit-pill">{stelle}</span>
-{stato_tag}
-</div>
-<div style="font-size:18px; font-weight:700; margin:2px 0;">{g_nome}</div>
-<div style="display:flex; gap:5px; margin-top:3px;">{tags_html}</div>
-</div>
-</div>
-<div class="fvm-box">
-<div class="fvm-val">{val_fvm}</div>
-<div class="fvm-label">FVM M</div>
-</div>
-</div>"""
+                    card_html = (
+                        f'<div class="player-card">'
+                        f'<div class="player-left">'
+                        f'<div class="role-badge-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
+                        f'<div>'
+                        f'<div style="display:flex; align-items:center; gap:8px;">'
+                        f'<span class="team-pill">{g_squadra}</span>'
+                        f'<span class="tit-pill">{stelle}</span>'
+                        f'{stato_tag}'
+                        f'</div>'
+                        f'<div style="font-size:18px; font-weight:700; margin:2px 0;">{g_nome}</div>'
+                        f'<div style="display:flex; gap:5px; margin-top:3px;">{tags_html}</div>'
+                        f'</div>'
+                        f'</div>'
+                        f'<div class="fvm-box">'
+                        f'<div class="fvm-val">{val_fvm}</div>'
+                        f'<div class="fvm-label">FVM M</div>'
+                        f'</div>'
+                        f'</div>'
+                    )
                     st.markdown(card_html, unsafe_allow_html=True)
 
                 with col_btn:
@@ -581,7 +562,7 @@ if df is not None:
                         mostra_modal_chiamata(row.to_dict())
 
         # ------------------------------------------
-        # 📋 TAB 2: LA MIA ROSA (CON OPZIONE ANNULLA)
+        # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
         with tab_rosa:
             st.subheader("📋 La Mia Rosa")
@@ -614,7 +595,7 @@ if df is not None:
                 st.info("Nessun giocatore acquistato finora. Acquista i tuoi giocatori dalla scheda Listone!")
 
         # ------------------------------------------
-        # 🤝 TAB 3: TUTTI I VENDUTI (ROSA GENERALE)
+        # 🤝 TAB 3: TUTTI I VENDUTI
         # ------------------------------------------
         with tab_venduti:
             st.subheader("🤝 Riepilogo Generale Venduti")
@@ -662,9 +643,7 @@ if df is not None:
             if not st.session_state.rosa:
                 st.warning("⚠️ Non hai ancora acquistato nessun giocatore. Fai acquisti per sbloccare l'analisi dei moduli!")
             else:
-                ruoli_disponibili = {}
-                for r in LISTA_RUOLI_MANTRA[1:]:
-                    ruoli_disponibili[r] = []
+                ruoli_disponibili = {r: [] for r in LISTA_RUOLI_MANTRA[1:]}
 
                 for p in st.session_state.rosa:
                     rm_tokens = [t.strip().upper() for t in re.split(r'[;,/\s]+', str(p.get('RM', '')))]
@@ -707,12 +686,10 @@ if df is not None:
                     slot_coperti = 0
                     test_usati = set()
                     for opzioni_ruolo in schema_reqs:
-                        trovato = False
                         for idx_p, p in enumerate(p_parsed):
                             if idx_p not in test_usati and any(r in p['Ruoli'] for r in opzioni_ruolo):
                                 test_usati.add(idx_p)
                                 slot_coperti += 1
-                                trovato = True
                                 break
                     
                     completo = solve(0)
