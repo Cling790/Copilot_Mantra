@@ -7,7 +7,7 @@ import os
 st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 
 # ==========================================
-# 🎨 STILI CSS PERSONALIZZATI (OTTIMIZZATI PER MOBILE)
+# 🎨 STILI CSS PERSONALIZZATI (OTTIMIZZATI PER MOBILE - NO SCROLL ORIZZONTALE)
 # ==========================================
 st.markdown("""
 <style>
@@ -16,30 +16,34 @@ st.markdown("""
 .element-container { margin-bottom: 0px !important; margin-top: 0px !important; }
 
 /* =========================================================
-   🔥 FIX DEFINITIVO PER IL MOBILE: IMPEDISCE DI ANDARE A CAPO 
+   🔥 FIX MOBILE: RIGA UNICA SENZA MAI SFORARE LO SCHERMO
    ========================================================= */
-/* Forza la riga orizzontale per i blocchi che contengono i giocatori */
 [data-testid="stHorizontalBlock"]:has(.player-main-card) {
+    display: flex !important;
     flex-wrap: nowrap !important;
     flex-direction: row !important;
     align-items: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 4px !important;
 }
 
-/* Fissa la larghezza della card su mobile (85%) */
+/* Colonna 1 (Card): Occupa tutto lo spazio disponibile rimanente */
 [data-testid="stHorizontalBlock"]:has(.player-main-card) > [data-testid="column"]:nth-child(1) {
-    width: 85% !important;
-    min-width: 85% !important;
-    flex: 1 1 85% !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
 }
 
-/* Fissa la larghezza del bottone su mobile (15%) */
+/* Colonna 2 (Bottone ⚡): Larghezza fissa e sicura (44px), zero overflow */
 [data-testid="stHorizontalBlock"]:has(.player-main-card) > [data-testid="column"]:nth-child(2) {
-    width: 15% !important;
-    min-width: 15% !important;
-    flex: 1 1 15% !important;
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    min-width: 44px !important;
 }
 
-/* Centra il bottone nel suo contenitore */
+/* Contenitore interno del bottone */
 div.stButton {
     width: 100% !important;
     height: 100% !important;
@@ -48,15 +52,15 @@ div.stButton {
     justify-content: center !important;
 }
 
-/* BOTTONE "CHIAMA" GIGANTE E QUADRATO PER MOBILE */
+/* BOTTONE "CHIAMA" QUADRATO E COMODO PER IL POLLICE */
 div.stButton > button {
     height: 100% !important;
     width: 100% !important;
-    min-height: 54px !important; /* Altezza allineata alla card */
-    font-size: 24px !important;  /* Icona bella grande */
+    min-height: 48px !important; 
+    font-size: 20px !important;  
     padding: 0px !important;
     margin: 0px !important;
-    border-radius: 8px !important;
+    border-radius: 6px !important;
 }
 
 /* RIGA NERA PRINCIPALE DEL GIOCATORE */
@@ -64,22 +68,21 @@ div.stButton > button {
     background-color: #1a1b20 !important;
     border: 1px solid #343a40 !important;
     border-radius: 8px !important;
-    padding: 8px !important;
-    margin-bottom: 0px !important;
+    padding: 6px 8px !important;
     width: 100% !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 6px !important;
+    gap: 4px !important;
     overflow: hidden !important; 
 }
 
 /* Badge Ruolo Adattivo (Capsula) */
 .role-circle {
-    min-width: 32px; 
-    height: 20px; 
-    padding: 0 5px;
-    border-radius: 6px; 
+    min-width: 30px; 
+    height: 18px; 
+    padding: 0 4px;
+    border-radius: 4px; 
     display: flex; 
     align-items: center; 
     justify-content: center;
@@ -92,7 +95,7 @@ div.stButton > button {
 
 /* Nome Giocatore - con min-width: 0 per permettere l'ellipsis su flexbox */
 .player-name-text {
-    font-size: 14px; font-weight: 700; color: #ffffff !important;
+    font-size: 13px; font-weight: 700; color: #ffffff !important;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
     flex-grow: 1; flex-shrink: 1; min-width: 0;
 }
@@ -104,18 +107,18 @@ div.stButton > button {
 }
 
 /* Stelle */
-.stars-text { font-size: 10px; color: #f1c40f !important; flex-shrink: 0; letter-spacing: -1px; }
+.stars-text { font-size: 9px; color: #f1c40f !important; flex-shrink: 0; letter-spacing: -1px; }
 
 /* Badge FVM */
 .fvm-badge-right {
-    font-size: 10px; font-weight: 700; background: #0f381e; color: #2ecc71 !important;
-    border: 1px solid #27ae60; padding: 2px 5px; border-radius: 4px;
+    font-size: 9px; font-weight: 700; background: #0f381e; color: #2ecc71 !important;
+    border: 1px solid #27ae60; padding: 2px 4px; border-radius: 4px;
     text-align: center; white-space: nowrap; flex-shrink: 0;
 }
 
 /* Tag micro inferiori */
 .tag-micro {
-    font-size: 9px; padding: 2px 5px; border-radius: 3px; background: #2b2c34;
+    font-size: 9px; padding: 1px 4px; border-radius: 3px; background: #2b2c34;
     color: #b0b0b0 !important; border: 1px solid #3d3e48; white-space: nowrap;
 }
 .tag-mio-style { background: #0055ff !important; color: #ffffff !important; font-weight: bold; border: none !important; }
@@ -455,7 +458,7 @@ if df is not None:
                     f'</div>'
                 )
 
-                # FORZIAMO PROPORZIONI 85% E 15% (ora fissate anche dal CSS su mobile)
+                # Layout a larghezza fissa (card fluida + bottone fisso a destra dentro lo schermo)
                 c_card, c_btn = st.columns([0.85, 0.15], vertical_alignment="center")
                 with c_card:
                     st.markdown(card_html, unsafe_allow_html=True)
