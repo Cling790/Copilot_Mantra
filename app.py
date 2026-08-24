@@ -449,9 +449,7 @@ if df is not None:
             if cerca_nome:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
 
-           except Exception:
-    pass
-
+        
 # ORDINAMENTO ALFABETICO A-Z
 if nome_col in df_filtrato.columns:
     df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
