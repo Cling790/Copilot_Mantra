@@ -506,8 +506,6 @@ if df is not None:
                 tags_html = "".join(tags_list)
                 col_bg = get_ruolo_colore(g_rm)
 
-                # CONTENITORE UNICO: Niente colonne di Streamlit che si rompono su mobile.
-                # Sfruttiamo due micro-colonne Streamlit solo per affiancare perfettamente il bottone e il FVM sotto la scheda.
                 card_html = (
                     f'<div style="background-color: #1a1b20; border: 1px solid #343a40; border-radius: 8px; padding: 8px; margin-bottom: 2px; width: 100%; box-sizing: border-box;">'
                     f'  <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; margin-bottom: 4px;">'
@@ -523,7 +521,6 @@ if df is not None:
                 )
                 st.markdown(card_html, unsafe_allow_html=True)
 
-                # Riga inferiore compact per il tasto Chiama e il badge FVM senza sballare
                 sub_c1, sub_c2 = st.columns([0.7, 0.3], vertical_alignment="center")
                 with sub_c1:
                     if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}", use_container_width=True):
@@ -531,7 +528,7 @@ if df is not None:
                 with sub_c2:
                     st.markdown(f'<div style="font-size: 11px; font-weight: 700; background: #0f381e; color: #2ecc71; border: 1px solid #27ae60; padding: 6px 4px; border-radius: 4px; text-align: center;">{val_fvm} FVM</div>', unsafe_allow_html=True)
                 
-                st.markdown('<div style="margin-bottom: 8px;"></div>', unsafe_allow_html=True) # Spazzietto tra i giocatori
+                st.markdown('<div style="margin-bottom: 8px;"></div>', unsafe_allow_html=True)
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
