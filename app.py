@@ -406,7 +406,7 @@ if df is not None:
             with col_b3:
                 if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
                     st.rerun()
-        
+
         # ------------------------------------------
         # 🔍 TAB 1: LISTONE A-Z & ASTA
         # ------------------------------------------
@@ -449,71 +449,72 @@ if df is not None:
             if cerca_nome:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
 
-# ORDINAMENTO ALFABETICO A-Z
-if nome_col in df_filtrato.columns:
-    df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
+            # ORDINAMENTO ALFABETICO A-Z
+            if nome_col in df_filtrato.columns:
+                df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
-df_filtrato = df_filtrato.head(40)
-st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
+            df_filtrato = df_filtrato.head(40)
+            st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
 
-for _, row in df_filtrato.iterrows():
-    g_nome = row[nome_col]
-    g_rm = str(row[rm_col]) if rm_col in row else "N/A"
-    g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
-    
-    val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
-    val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
+            for _, row in df_filtrato.iterrows():
+                g_nome = row[nome_col]
+                g_rm = str(row[rm_col]) if rm_col in row else "N/A"
+                g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
+                
+                val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
+                val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
 
-    tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
-    tit_val = min(max(tit_val, 1), 5)
-    stelle = "★" * tit_val + "☆" * (5 - tit_val)
+                tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
+                tit_val = min(max(tit_val, 1), 5)
+                stelle = "★" * tit_val + "☆" * (5 - tit_val)
 
-    # Tag inferiori
-    tags_list = []
-    if val_qta is not None:
-        tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
-    if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']:
-        tags_list.append(f'<span class="tag-micro">{str(row[fascia_col]).strip()}</span>')
-    if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
-        tags_list.append('<span class="tag-micro">⚽ Rig</span>')
-    if note_col and pd.notna(row[note_col]) and str(note_col).strip() not in ['-', '']:
-        for t in str(note_col).split(','):
-            tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
-    if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
-        tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
-    
-    if g_nome in miei_nomi:
-        tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
-    elif g_nome in venduti_dict:
-        tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
+                # Tag inferiori
+                tags_list = []
+                if val_qta is not None:
+                    tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
+                if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']:
+                    tags_list.append(f'<span class="tag-micro">{str(row[fascia_col]).strip()}</span>')
+                if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
+                    tags_list.append('<span class="tag-micro">⚽ Rig</span>')
+                if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
+                    for t in str(row[note_col]).split(','):
+                        tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
+                if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
+                    tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
+                
+                if g_nome in miei_nomi:
+                    tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
+                elif g_nome in venduti_dict:
+                    tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
 
-    tags_html = "".join(tags_list)
-    col_bg = get_ruolo_colore(g_rm)
+                tags_html = "".join(tags_list)
+                col_bg = get_ruolo_colore(g_rm)
 
-    # Scheda Nera Principale (Nome, Ruolo, Stelle, Tag e FVM a destra)
-    card_html = (
-        f'<div class="player-main-card">'
-        f'  <div style="display: flex; align-items: center; gap: 6px; width: 100%;">'
-        f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
-        f'    <span class="player-name-text">{g_nome}</span>'
-        f'    <span class="team-badge">{g_squadra}</span>'
-        f'    <span class="stars-text">{stelle}</span>'
-        f'    <div class="fvm-badge-right">{val_fvm} FVM</div>'
-        f'  </div>'
-        f'  <div style="display: flex; align-items: center; gap: 4px; overflow-x: auto; white-space: nowrap;">'
-        f'    {tags_html}'
-        f'  </div>'
-        f'</div>'
-    )
-    st.markdown(card_html, unsafe_allow_html=True)
+                # Scheda Nera Principale (Nome, Ruolo, Stelle, Tag e FVM a destra)
+                card_html = (
+                    f'<div class="player-main-card">'
+                    f'  <div style="display: flex; align-items: center; gap: 6px; width: 100%;">'
+                    f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
+                    f'    <span class="player-name-text">{g_nome}</span>'
+                    f'    <span class="team-badge">{g_squadra}</span>'
+                    f'    <span class="stars-text">{stelle}</span>'
+                    f'    <div class="fvm-badge-right">{val_fvm} FVM</div>'
+                    f'  </div>'
+                    f'  <div style="display: flex; align-items: center; gap: 4px; overflow-x: auto; white-space: nowrap;">'
+                    f'    {tags_html}'
+                    f'  </div>'
+                    f'</div>'
+                )
+                st.markdown(card_html, unsafe_allow_html=True)
 
-    # Tasto Chiama compatto (senza occupare tutta la larghezza)
-    col_btn_left, col_space = st.columns([0.38, 0.62])
-    with col_btn_left:
-        if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}", use_container_width=True):
-            mostra_modal_chiamata(row.to_dict())
+                # Tasto Chiama compatto (senza occupare tutta la larghezza)
+                col_btn_left, col_space = st.columns([0.38, 0.62])
+                with col_btn_left:
+                    if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}", use_container_width=True):
+                        mostra_modal_chiamata(row.to_dict())
 
-    st.markdown('<div style="margin-bottom: 10px;"></div>', unsafe_allow_html=True)
+                st.markdown('<div style="margin-bottom: 10px;"></div>', unsafe_allow_html=True)
+
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
