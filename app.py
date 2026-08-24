@@ -449,9 +449,6 @@ if df is not None:
             if cerca_nome:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
 
-except:
-    pass
-
 # ORDINAMENTO ALFABETICO A-Z
 if nome_col in df_filtrato.columns:
     df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
@@ -479,8 +476,8 @@ for _, row in df_filtrato.iterrows():
         tags_list.append(f'<span class="tag-micro">{str(row[fascia_col]).strip()}</span>')
     if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
         tags_list.append('<span class="tag-micro">⚽ Rig</span>')
-    if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
-        for t in str(row[note_col]).split(','):
+    if note_col and pd.notna(row[note_col]) and str(note_col).strip() not in ['-', '']:
+        for t in str(note_col).split(','):
             tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
     if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
         tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
