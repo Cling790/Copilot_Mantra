@@ -466,7 +466,7 @@ if df is not None:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
 
             # ORDINAMENTO ALFABETICO A-Z
-            if nome_col in df_filtrato.columns:
+           if nome_col in df_filtrato.columns:
                 df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
             df_filtrato = df_filtrato.head(40)
@@ -484,7 +484,7 @@ if df is not None:
                 tit_val = min(max(tit_val, 1), 5)
                 stelle = "★" * tit_val + "☆" * (5 - tit_val)
 
-                # Costruzione dei tag inferiori
+                # Tag inferiori
                 tags_list = []
                 if val_qta is not None:
                     tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
@@ -498,7 +498,6 @@ if df is not None:
                 if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
                     tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
                 
-                # Tag di appartenenza
                 if g_nome in miei_nomi:
                     tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
                 elif g_nome in venduti_dict:
@@ -507,33 +506,32 @@ if df is not None:
                 tags_html = "".join(tags_list)
                 col_bg = get_ruolo_colore(g_rm)
 
-                # Usiamo colonne piccolissime solo per affiancare il bottone e il badge senza l'incolonnamento nativo problematico
-                c_info, c_btn, c_fvm = st.columns([0.62, 0.20, 0.18], vertical_alignment="center")
+                # CONTENITORE UNICO: Niente colonne di Streamlit che si rompono su mobile.
+                # Sfruttiamo due micro-colonne Streamlit solo per affiancare perfettamente il bottone e il FVM sotto la scheda.
+                card_html = (
+                    f'<div style="background-color: #1a1b20; border: 1px solid #343a40; border-radius: 8px; padding: 8px; margin-bottom: 2px; width: 100%; box-sizing: border-box;">'
+                    f'  <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; margin-bottom: 4px;">'
+                    f'    <div style="min-width: 22px; width: 22px; height: 22px; border-radius: 50%; background-color: {col_bg}; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: #ffffff; flex-shrink: 0;">{g_rm[:4]}</div>'
+                    f'    <span style="font-size: 13px; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis;">{g_nome}</span>'
+                    f'    <span style="font-size: 9px; font-weight: 700; background: #343a40; color: #e0e0e0; padding: 1px 4px; border-radius: 3px; flex-shrink: 0;">{g_squadra}</span>'
+                    f'    <span style="font-size: 9px; color: #f1c40f; flex-shrink: 0; letter-spacing: -1px;">{stelle}</span>'
+                    f'  </div>'
+                    f'  <div style="display: flex; align-items: center; gap: 4px; overflow-x: auto; white-space: nowrap; padding-bottom: 2px;">'
+                    f'    {tags_html}'
+                    f'  </div>'
+                    f'</div>'
+                )
+                st.markdown(card_html, unsafe_allow_html=True)
 
-                with c_info:
-                    st.markdown(
-                        f'<div class="player-row-container" style="margin-bottom: 0px !important;">'
-                        f'  <div class="player-info-side">'
-                        f'    <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap;">'
-                        f'      <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
-                        f'      <span class="player-name-text">{g_nome}</span>'
-                        f'      <span class="team-badge">{g_squadra}</span>'
-                        f'      <span class="stars-text">{stelle}</span>'
-                        f'    </div>'
-                        f'    <div style="display: flex; align-items: center; gap: 3px; overflow: hidden; white-space: nowrap;">'
-                        f'      {tags_html}'
-                        f'    </div>'
-                        f'  </div>'
-                        f'</div>',
-                        unsafe_allow_html=True
-                    )
-
-                with c_btn:
-                    if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}"):
+                # Riga inferiore compact per il tasto Chiama e il badge FVM senza sballare
+                sub_c1, sub_c2 = st.columns([0.7, 0.3], vertical_alignment="center")
+                with sub_c1:
+                    if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}", use_container_width=True):
                         mostra_modal_chiamata(row.to_dict())
-
-                with c_fvm:
-                    st.markdown(f'<div class="fvm-badge-custom">{val_fvm} FVM</div>', unsafe_allow_html=True)
+                with sub_c2:
+                    st.markdown(f'<div style="font-size: 11px; font-weight: 700; background: #0f381e; color: #2ecc71; border: 1px solid #27ae60; padding: 6px 4px; border-radius: 4px; text-align: center;">{val_fvm} FVM</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div style="margin-bottom: 8px;"></div>', unsafe_allow_html=True) # Spazzietto tra i giocatori
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
