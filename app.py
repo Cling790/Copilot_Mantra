@@ -292,7 +292,6 @@ def carica_dati_completi(file_main_user=None, file_sec_user=None):
                 if df_sec is not None: break
     return unisci_dati(df_main, df_sec) if df_sec is not None else df_main
 
-# LIMITI SPECIFICI: Portieri 4, Difensori 9, Centrocampisti 9, TRQ + ATT (somma condivisa) = 10
 SLOT_TOTALI = 32
 MAX_TRQ_ATT_COMBINATI = 10
 
@@ -400,7 +399,8 @@ if df is not None:
         # ------------------------------------------
         with tab_asta:
             set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
-            
+            num_occasioni = len(set_occasioni)
+
             def reset_ruolo_callback():
                 st.session_state["filtro_ruolo_specifico"] = "Tutti"
 
@@ -420,12 +420,13 @@ if df is not None:
                 opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
                 ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
 
-            # 3. CHECKBOX
+            # 3. CHECKBOX CON CONTATORE DINAMICO (UNICO SEGNALE DISCRETO)
             col_cb1, col_cb2 = st.columns(2)
             with col_cb1: 
                 mostra_anche_venduti = st.checkbox("👁️ Mostra anche Venduti", value=False)
             with col_cb2: 
-                solo_occasioni = st.checkbox("🔥 Solo Affari / Occasioni", value=False)
+                label_checkbox = f"🔥 Solo Affari / Occasioni ({num_occasioni})" if num_occasioni > 0 else "🔥 Solo Affari / Occasioni"
+                solo_occasioni = st.checkbox(label_checkbox, value=False)
 
             st.divider()
 
@@ -488,7 +489,6 @@ if df is not None:
                     f'</div>'
                 )
 
-                # Colonna Card + Colonna Tasto
                 c_card, c_btn = st.columns([1, 1], vertical_alignment="center")
                 with c_card:
                     st.markdown(card_html, unsafe_allow_html=True)
@@ -514,7 +514,6 @@ if df is not None:
                 st.divider()
                 st.subheader("📊 Riepilogo Rosa")
                 
-                # CONTEGGI REPARTI
                 p_por = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Portieri']
                 p_dif = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Difensori']
                 p_cen = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Centrocampisti']
