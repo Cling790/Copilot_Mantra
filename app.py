@@ -178,7 +178,7 @@ if not st.session_state.autenticato:
     st.stop()
 
 # ==========================================
-# ⚽ MAPPATURE RUOLI E COLORI
+# ⚽ MAPPATURE RUOLI E REPARTI (REGOLA PRIMO RUOLO)
 # ==========================================
 MAPPA_REPARTI = {
     'Portieri': ['POR', 'P'],
@@ -214,10 +214,15 @@ def get_ruolo_colore(rm_str):
     return '#f39c12'      # Giallo
 
 def get_reparto(rm_str):
+    """Determina il reparto basandosi rigorosamente sul PRIMO ruolo trovato nella stringa."""
     rm_str = str(rm_str).upper()
     tokens = re.findall(r'\b[A-Z]+\b', rm_str)
+    if not tokens:
+        return 'Altri'
+    
+    primo_ruolo = tokens[0]
     for reparto, ruoli in MAPPA_REPARTI.items():
-        if any(r in tokens for r in ruoli):
+        if primo_ruolo in ruoli:
             return reparto
     return 'Altri'
 
@@ -448,7 +453,6 @@ if df is not None:
         with tab_asta:
             set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
             
-            # Funzione callback per resettare il ruolo specifico quando si cambia reparto
             def reset_ruolo_callback():
                 st.session_state["filtro_ruolo_specifico"] = "Tutti"
 
@@ -462,7 +466,6 @@ if df is not None:
                 )
             
             with col_f2:
-                # FILTRO DINAMICO: MOSTRA ESCLUSIVAMENTE I RUOLI DEL REPARTO SCELTO
                 if macro_reparto == "Tutti":
                     opzioni_ruoli = LISTA_RUOLI_MANTRA
                 else:
@@ -486,10 +489,11 @@ if df is not None:
             if solo_occasioni:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
 
+            # FILTRAGGIO MACRO REPARTO BASATO SUL PRIMO RUOLO
             if macro_reparto != "Tutti":
-                ruoli_rep = MAPPA_REPARTI.get(macro_reparto, [])
-                df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: any(r in str(x).upper() for r in ruoli_rep))]
+                df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
 
+            # FILTRAGGIO RUOLO SPECIFICO (PRESENTE NEI RUOLI DEL GIOCATORE)
             if ruolo_specifico != "Tutti":
                 df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo_specifico) + r'\b', case=False, na=False)]
 
@@ -721,11 +725,12 @@ if df is not None:
 
                 col_m1, col_m2 = st.columns([2, 3])
                 
-                with col_m1:
+                ch_mod1, ch_mod2 = st.columns([2, 3])
+                with ch_mod1:
                     df_mod = pd.DataFrame(res_moduli)
                     st.dataframe(df_mod[["Modulo", "Status", "Titolari Coperti"]], use_container_width=True, hide_index=True)
 
-                with col_m2:
+                with ch_mod2:
                     moduli_ok = [m["Modulo"] for m in res_moduli if m["Giocabile"]]
                     if moduli_ok:
                         st.success(f"🎉 **Puoi schierare i seguenti moduli completi:** {', '.join(moduli_ok)}")
