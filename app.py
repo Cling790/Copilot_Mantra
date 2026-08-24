@@ -183,11 +183,11 @@ if not st.session_state.autenticato:
 MAPPA_REPARTI = {
     'Portieri': ['POR', 'P'],
     'Difensori': ['DD', 'DS', 'DC', 'B'],
-    'Centrocampisti': ['E', 'M', 'C'],
-    'Trequartisti/Attaccanti': ['W', 'T', 'A', 'PC']
+    'Centrocampisti': ['C', 'M', 'E'],
+    'Trequartisti/Attaccanti': ['T', 'W', 'A', 'PC']
 }
 
-LISTA_RUOLI_MANTRA = ["Tutti", "POR", "DD", "DS", "DC", "B", "E", "M", "C", "W", "T", "A", "PC"]
+LISTA_RUOLI_MANTRA = ["Tutti", "POR", "DD", "DS", "DC", "B", "C", "M", "E", "T", "W", "A", "PC"]
 
 SCHEMI_MANTRA = {
     "3-4-2-1": [["POR"], ["DC"], ["DC"], ["DC"], ["E", "W"], ["M", "C"], ["M", "C"], ["E", "W"], ["T", "W"], ["T", "A"], ["PC"]],
@@ -448,24 +448,25 @@ if df is not None:
         with tab_asta:
             set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
             
+            # Funzione callback per resettare il ruolo specifico quando si cambia reparto
+            def reset_ruolo_callback():
+                st.session_state["filtro_ruolo_specifico"] = "Tutti"
+
             col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns([2, 2, 2, 1, 1])
             with col_f1:
                 macro_reparto = st.selectbox(
                     "🛡️ Reparto:", 
                     options=["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti/Attaccanti"],
-                    key="filtro_macro_reparto"
+                    key="filtro_macro_reparto",
+                    on_change=reset_ruolo_callback
                 )
             
             with col_f2:
-                # FILTRO DINAMICO: MOSTRA SOLO I RUOLI MANTRA PERTINENTI AL REPARTO SCELTO
+                # FILTRO DINAMICO: MOSTRA ESCLUSIVAMENTE I RUOLI DEL REPARTO SCELTO
                 if macro_reparto == "Tutti":
                     opzioni_ruoli = LISTA_RUOLI_MANTRA
                 else:
                     opzioni_ruoli = ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
-                
-                # Controllo di sicurezza se il ruolo precedentemente selezionato non fa parte del nuovo reparto
-                if "filtro_ruolo_specifico" in st.session_state and st.session_state["filtro_ruolo_specifico"] not in opzioni_ruoli:
-                    st.session_state["filtro_ruolo_specifico"] = "Tutti"
 
                 ruolo_specifico = st.selectbox(
                     "🎯 Ruolo Mantra:", 
