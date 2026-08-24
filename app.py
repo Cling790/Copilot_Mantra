@@ -25,7 +25,6 @@ st.markdown("""
 .element-container { margin-bottom: 0px !important; margin-top: 0px !important; }
 
 /* 3. LARGHEZZA RIGIDA SOLO PER LA RIGA CARD GIOCATORE + TASTO FULMINE */
-/* Usa :has(div.player-main-card) per fare in modo che NON rovini i filtri o altre colonne */
 [data-testid="stHorizontalBlock"]:has(div.player-main-card) {
     display: flex !important;
     flex-direction: row !important;
@@ -210,13 +209,14 @@ if not st.session_state.autenticato:
     st.stop()
 
 # ==========================================
-# ⚽ MAPPATURE RUOLI E REPARTI
+# ⚽ MAPPATURE RUOLI E REPARTI SEPARATI
 # ==========================================
 MAPPA_REPARTI = {
     'Portieri': ['POR', 'P'],
     'Difensori': ['DD', 'DS', 'DC', 'B'],
     'Centrocampisti': ['C', 'M', 'E'],
-    'Trequartisti/Attaccanti': ['T', 'W', 'A', 'PC']
+    'Trequartisti': ['T', 'W'],
+    'Attaccanti': ['A', 'PC']
 }
 
 LISTA_RUOLI_MANTRA = ["Tutti", "POR", "DD", "DS", "DC", "B", "C", "M", "E", "T", "W", "A", "PC"]
@@ -292,8 +292,9 @@ def carica_dati_completi(file_main_user=None, file_sec_user=None):
                 if df_sec is not None: break
     return unisci_dati(df_main, df_sec) if df_sec is not None else df_main
 
-LIMITI = {'Portieri': 4, 'Difensori': 9, 'Centrocampisti': 9, 'Trequartisti/Attaccanti': 10}
-SLOT_TOTALI = sum(LIMITI.values())
+# LIMITI SPECIFICI: Portieri 4, Difensori 9, Centrocampisti 9, TRQ + ATT (somma condivisa) = 10
+SLOT_TOTALI = 32
+MAX_TRQ_ATT_COMBINATI = 10
 
 tot_fvm_uscite = sum(v['FVM'] for v in st.session_state.tutti_venduti if v.get('FVM', 0) > 0)
 tot_spesa_uscite = sum(v['Prezzo'] for v in st.session_state.tutti_venduti)
@@ -389,7 +390,6 @@ if df is not None:
                 if st.button("📌 ALTRI", use_container_width=True, key=f"btn_vend_{gn}"):
                     st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
                     salva_backup()
-                    salva_backup()
                     st.rerun()
             with col_b3:
                 if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
@@ -404,18 +404,23 @@ if df is not None:
             def reset_ruolo_callback():
                 st.session_state["filtro_ruolo_specifico"] = "Tutti"
 
-            # 1. CAMPO CERCA NOME (A TUTTO SCHERMO PER FACILITÀ)
+            # 1. CAMPO CERCA NOME
             cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro, Dybala...")
 
-            # 2. REPARTO E RUOLO SU DUE COLONNE SPAZIOSE
+            # 2. REPARTO E RUOLO CON OPZIONI SEPARATE
             col_f1, col_f2 = st.columns(2)
             with col_f1: 
-                macro_reparto = st.selectbox("🛡️ Reparto:", ["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti/Attaccanti"], key="filtro_macro_reparto", on_change=reset_ruolo_callback)
+                macro_reparto = st.selectbox(
+                    "🛡️ Reparto:", 
+                    ["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti", "Attaccanti"], 
+                    key="filtro_macro_reparto", 
+                    on_change=reset_ruolo_callback
+                )
             with col_f2:
                 opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
                 ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
 
-            # 3. CHECKBOX BEN VISIBILI E COMODI DA PREMERE
+            # 3. CHECKBOX
             col_cb1, col_cb2 = st.columns(2)
             with col_cb1: 
                 mostra_anche_venduti = st.checkbox("👁️ Mostra anche Venduti", value=False)
@@ -508,10 +513,24 @@ if df is not None:
 
                 st.divider()
                 st.subheader("📊 Riepilogo Rosa")
-                c_r1, c_r2, c_r3, c_r4 = st.columns(4)
-                for i, (rep_nome, max_s) in enumerate(LIMITI.items()):
-                    p_rep = [p for p in st.session_state.rosa if get_reparto(p['RM']) == rep_nome]
-                    [c_r1, c_r2, c_r3, c_r4][i].metric(f"{rep_nome}", f"{len(p_rep)} / {max_s}", f"{sum(p['Prezzo'] for p in p_rep)} cr")
+                
+                # CONTEGGI REPARTI
+                p_por = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Portieri']
+                p_dif = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Difensori']
+                p_cen = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Centrocampisti']
+                p_trq = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Trequartisti']
+                p_att = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Attaccanti']
+                
+                tot_trq_att = len(p_trq) + len(p_att)
+
+                cols_r = st.columns(5)
+                cols_r[0].metric("Portieri", f"{len(p_por)} / 4", f"{sum(p['Prezzo'] for p in p_por)} cr")
+                cols_r[1].metric("Difensori", f"{len(p_dif)} / 9", f"{sum(p['Prezzo'] for p in p_dif)} cr")
+                cols_r[2].metric("Centrocampisti", f"{len(p_cen)} / 9", f"{sum(p['Prezzo'] for p in p_cen)} cr")
+                cols_r[3].metric("Trequartisti", f"{len(p_trq)}", f"{sum(p['Prezzo'] for p in p_trq)} cr")
+                cols_r[4].metric("Attaccanti", f"{len(p_att)}", f"{sum(p['Prezzo'] for p in p_att)} cr")
+                
+                st.caption(f"🎯 **Trequartisti + Attaccanti:** {tot_trq_att} / {MAX_TRQ_ATT_COMBINATI} slot complessivi occupati.")
             else:
                 st.info("Nessun giocatore acquistato finora.")
 
