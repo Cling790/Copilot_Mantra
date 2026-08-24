@@ -236,11 +236,27 @@ SCHEMI_MANTRA = {
 }
 
 def get_ruolo_colore(rm_str):
-    rm_upper = str(rm_str).upper()
-    if any(r in rm_upper for r in ['PC', 'A', 'W']): return '#e74c3c'
-    elif any(r in rm_upper for r in ['T', 'C', 'M', 'E']): return '#2980b9'
-    elif any(r in rm_upper for r in ['DD', 'DS', 'DC', 'B']): return '#27ae60'
-    return '#f39c12'
+    rm_str = str(rm_str).upper()
+    tokens = re.findall(r'\b[A-Z]+\b', rm_str)
+    if not tokens:
+        return '#7f8c8d'  # Grigio di default
+    
+    primo_ruolo = tokens[0]
+    
+    # 1. Portieri -> Giallo/Arancione
+    if primo_ruolo == 'POR':
+        return '#f39c12'
+    # 2. Difensori -> Verde
+    elif primo_ruolo in ['DD', 'DS', 'DC', 'B']:
+        return '#27ae60'
+    # 3. Centrocampisti -> Azzurro
+    elif primo_ruolo in ['C', 'M', 'E']:
+        return '#2980b9'
+    # 4. Trequartisti e Attaccanti -> Rosso
+    elif primo_ruolo in ['T', 'W', 'A', 'PC']:
+        return '#e74c3c'
+    
+    return '#7f8c8d'
 
 def get_reparto(rm_str):
     rm_str = str(rm_str).upper()
