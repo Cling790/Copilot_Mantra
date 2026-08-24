@@ -7,11 +7,22 @@ import os
 st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 
 # ==========================================
-# 🎨 STILI CSS PERSONALIZZATI (DARK & COMPACT)
+# 🎨 STILI CSS PERSONALIZZATI (FORZATURA COMPACT & TAB GRIGI)
 # ==========================================
 st.markdown("""
 <style>
-/* Riga nera principale del giocatore */
+/* 1. RIDUZIONE SPAZIATURA ELEMENTI STREAMLIT (ELIMINA SPAZIO SOTTO BOTTONI) */
+.element-container:has(div.stButton) {
+    margin-bottom: -12px !important;
+}
+div.stButton > button {
+    min-height: 26px !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    margin: 0px !important;
+}
+
+/* 2. RIGA NERA PRINCIPALE DEL GIOCATORE */
 .player-main-card {
     background-color: #1a1b20 !important;
     border: 1px solid #343a40 !important;
@@ -63,33 +74,25 @@ st.markdown("""
     text-align: center; white-space: nowrap; flex-shrink: 0;
 }
 
-/* ==========================================
-   🗂️ STILE TAB GRIGI E COMPATTI
-   ========================================== */
+/* 3. STILE TAB GRIGI E COMPATTI */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 6px;
-    background-color: #262730;
-    padding: 6px;
-    border-radius: 8px;
+    gap: 6px !important;
+    background-color: #1e1f26 !important;
+    padding: 6px !important;
+    border-radius: 8px !important;
 }
 .stTabs [data-baseweb="tab"] {
-    background-color: #373840 !important;
+    background-color: #2e3039 !important;
     color: #b0b0b0 !important;
     border-radius: 6px !important;
-    padding: 4px 10px !important;
+    padding: 6px 12px !important;
     font-size: 12px !important;
+    border: none !important;
 }
 .stTabs [aria-selected="true"] {
     background-color: #52545f !important;
     color: #ffffff !important;
     font-weight: bold !important;
-}
-
-/* Riduzione altezza e margini dei bottoni per mobile */
-.stButton button {
-    min-height: 28px !important;
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -533,9 +536,6 @@ if df is not None:
                 with col_btn_left:
                     if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}", use_container_width=True):
                         mostra_modal_chiamata(row.to_dict())
-
-                # Spaziatura ridotta al minimo per compattezza su mobile
-                st.markdown('<div style="margin-bottom: 2px;"></div>', unsafe_allow_html=True)
 
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
