@@ -11,31 +11,34 @@ st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 # ==========================================
 st.markdown("""
 <style>
-/* Applica lo stile Card direttamente al contenitore delle colonne di Streamlit per bloccare il responsive wrap su mobile */
+/* 1. Trasforma il contenitore delle colonne nell'UNICA Scheda Nera a larghezza fissa */
 div[data-testid="stHorizontalBlock"] {
+    background-color: #1e1e24 !important;
+    border: 1px solid #343a40 !important;
+    border-radius: 8px !important;
+    padding: 6px 6px !important;
+    margin-bottom: 5px !important;
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     align-items: center !important;
-    gap: 4px !important;
-    background-color: #1e1e24 !important;
-    border: 1px solid #343a40 !important;
-    border-radius: 6px !important;
-    padding: 5px 6px !important;
-    margin-bottom: 4px !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-/* Azzera i margini nativi delle singole colonne */
+/* 2. Blocca il traboccamento delle colonne su mobile */
 div[data-testid="column"] {
     min-width: 0 !important;
-    padding: 0px 1px !important;
+    padding: 0px 2px !important;
+    flex-shrink: 1 !important;
 }
 
-/* Cerchio Ruolo Colorato */
+/* 3. Cerchio Ruolo */
 .role-circle {
-    min-width: 23px;
-    width: 23px;
-    height: 23px;
+    min-width: 22px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -46,7 +49,7 @@ div[data-testid="column"] {
     flex-shrink: 0;
 }
 
-/* Nome Giocatore */
+/* 4. Nome Giocatore */
 .player-name-text {
     font-size: 12px;
     font-weight: 700;
@@ -54,10 +57,10 @@ div[data-testid="column"] {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 85px;
+    max-width: 75px;
 }
 
-/* Squadra */
+/* 5. Squadra Badge */
 .team-badge {
     font-size: 8px;
     font-weight: 700;
@@ -68,55 +71,15 @@ div[data-testid="column"] {
     flex-shrink: 0;
 }
 
-/* Stelle Titolarità */
+/* 6. Stelle */
 .stars-text {
-    font-size: 9px;
+    font-size: 8px;
     color: #f1c40f !important;
     flex-shrink: 0;
     letter-spacing: -1px;
 }
 
-/* Tasto Chiama compatto posizionato al centro */
-div[data-testid="stButton"] {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-}
-
-div[data-testid="stButton"] > button {
-    padding: 2px 2px !important;
-    font-size: 10px !important;
-    font-weight: 800 !important;
-    height: 25px !important;
-    min-height: 25px !important;
-    line-height: 1 !important;
-    border-radius: 4px !important;
-    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
-    color: #ffffff !important;
-    border: none !important;
-    width: 100% !important;
-    white-space: nowrap !important;
-}
-
-div[data-testid="stButton"] > button:hover {
-    background: linear-gradient(135deg, #ffa726, #fb8c00) !important;
-    color: #ffffff !important;
-}
-
-/* Badge FVM M */
-.fvm-badge {
-    font-size: 9px;
-    font-weight: 700;
-    background: #0f381e;
-    color: #2ecc71 !important;
-    border: 1px solid #27ae60;
-    padding: 2px 4px;
-    border-radius: 4px;
-    text-align: center;
-    white-space: nowrap;
-}
-
-/* Tag Micro (Riga Inferiore) */
+/* 7. Tag Micro */
 .tag-micro {
     font-size: 8px;
     padding: 0px 3px;
@@ -127,22 +90,44 @@ div[data-testid="stButton"] > button:hover {
     white-space: nowrap;
 }
 
-.tag-mio-style {
-    background: #0055ff !important;
-    color: #ffffff !important;
-    font-weight: bold;
+.tag-mio-style { background: #0055ff !important; color: #ffffff !important; font-weight: bold; }
+.tag-venduto-style { background: #c0392b !important; color: #ffffff !important; font-weight: bold; }
+.tag-affare-style { background: #d35400 !important; color: #ffffff !important; font-weight: bold; }
+
+/* 8. Pulsante Chiama */
+div[data-testid="stButton"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
 }
 
-.tag-venduto-style {
-    background: #c0392b !important;
+div[data-testid="stButton"] > button {
+    padding: 0px 2px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    border-radius: 4px !important;
+    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
     color: #ffffff !important;
-    font-weight: bold;
+    border: none !important;
+    width: 100% !important;
+    white-space: nowrap !important;
 }
 
-.tag-affare-style {
-    background: #d35400 !important;
-    color: #ffffff !important;
-    font-weight: bold;
+/* 9. Badge FVM */
+.fvm-badge {
+    font-size: 9px;
+    font-weight: 700;
+    background: #0f381e;
+    color: #2ecc71 !important;
+    border: 1px solid #27ae60;
+    padding: 3px 2px;
+    border-radius: 4px;
+    text-align: center;
+    white-space: nowrap;
+    width: 100%;
+    box-sizing: border-box;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -573,24 +558,24 @@ if df is not None:
                 tags_html = "".join(tags_list)
                 col_bg = get_ruolo_colore(g_rm)
 
-                # Layout a 3 colonne: [Info 52%] | [Tasto Chiama 28%] | [FVM 20%]
-                col_info, col_btn, col_fvm = st.columns([0.52, 0.28, 0.20], vertical_alignment="center")
+                # Ripartizione esatta 100% larghezza mobile: [Info 54%] [Chiama 26%] [FVM 20%]
+                col_info, col_btn, col_fvm = st.columns([0.54, 0.26, 0.20], vertical_alignment="center")
 
                 with col_info:
-                    card_html = (
-                        f'<div class="player-row-card">'
-                        f'  <div class="row-top">'
+                    st.markdown(
+                        f'<div style="display: flex; flex-direction: column; gap: 2px; overflow: hidden;">'
+                        f'  <div style="display: flex; align-items: center; gap: 3px; overflow: hidden; white-space: nowrap;">'
                         f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
                         f'    <span class="player-name-text">{g_nome}</span>'
                         f'    <span class="team-badge">{g_squadra}</span>'
                         f'    <span class="stars-text">{stelle}</span>'
                         f'  </div>'
-                        f'  <div class="row-bottom">'
+                        f'  <div style="display: flex; align-items: center; gap: 3px; overflow: hidden; white-space: nowrap;">'
                         f'    {tags_html}'
                         f'  </div>'
-                        f'</div>'
+                        f'</div>',
+                        unsafe_allow_html=True
                     )
-                    st.markdown(card_html, unsafe_allow_html=True)
 
                 with col_btn:
                     if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}"):
