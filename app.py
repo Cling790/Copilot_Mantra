@@ -496,7 +496,7 @@ if df is not None:
             df_filtrato = df_filtrato.head(40)
             st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
 
-           for _, row in df_filtrato.iterrows():
+                for _, row in df_filtrato.iterrows():
                 g_nome = row[nome_col]
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
                 g_squadra = str(row[squadra_col])[:3].upper() if me_squadra in row else "SER" if 'squadra_col' in locals() else "SER"
