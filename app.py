@@ -7,7 +7,7 @@ import os
 st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 
 # ==========================================
-# 🎨 STILI CSS PERSONALIZZATI (DARK CARDS)
+# 🎨 STILI CSS PERSONALIZZATI (DARK & COMPACT)
 # ==========================================
 st.markdown("""
 <style>
@@ -16,18 +16,18 @@ st.markdown("""
     background-color: #1a1b20 !important;
     border: 1px solid #343a40 !important;
     border-radius: 8px !important;
-    padding: 8px 10px !important;
-    margin-bottom: 3px !important;
+    padding: 6px 8px !important;
+    margin-bottom: 2px !important;
     width: 100% !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 4px !important;
+    gap: 3px !important;
 }
 
 /* Cerchio Ruolo */
 .role-circle {
-    min-width: 22px; width: 22px; height: 22px;
+    min-width: 20px; width: 20px; height: 20px;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: 9px; font-weight: 800; color: #ffffff !important; flex-shrink: 0;
 }
@@ -59,8 +59,37 @@ st.markdown("""
 /* Badge FVM integrato in alto a destra nella riga nera */
 .fvm-badge-right {
     font-size: 10px; font-weight: 700; background: #0f381e; color: #2ecc71 !important;
-    border: 1px solid #27ae60; padding: 3px 6px; border-radius: 4px;
+    border: 1px solid #27ae60; padding: 2px 5px; border-radius: 4px;
     text-align: center; white-space: nowrap; flex-shrink: 0;
+}
+
+/* ==========================================
+   🗂️ STILE TAB GRIGI E COMPATTI
+   ========================================== */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 6px;
+    background-color: #262730;
+    padding: 6px;
+    border-radius: 8px;
+}
+.stTabs [data-baseweb="tab"] {
+    background-color: #373840 !important;
+    color: #b0b0b0 !important;
+    border-radius: 6px !important;
+    padding: 4px 10px !important;
+    font-size: 12px !important;
+}
+.stTabs [aria-selected="true"] {
+    background-color: #52545f !important;
+    color: #ffffff !important;
+    font-weight: bold !important;
+}
+
+/* Riduzione altezza e margini dei bottoni per mobile */
+.stButton button {
+    min-height: 28px !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -105,7 +134,6 @@ if 'tutti_venduti' not in st.session_state:
 if 'autenticato' not in st.session_state:
     st.session_state.autenticato = False
 
-# FUNZIONE PER ANNULLARE UN ACQUISTO (TUO O DEGLI ALTRI)
 def rimuovi_giocatore(nome_giocatore):
     st.session_state.rosa = [p for p in st.session_state.rosa if p['Nome'] != nome_giocatore]
     st.session_state.tutti_venduti = [v for v in st.session_state.tutti_venduti if v['Nome'] != nome_giocatore]
@@ -300,7 +328,7 @@ def calcola_occasioni(df_completo, tutti_venduti):
     occasioni_set = set()
     rm_col = next((c for c in df_completo.columns if str(c).upper() == 'RM'), 'RM')
     
-    for ruolo in LISTA_RUOLI_MANTRA[1:]:  # Escludiamo "Tutti"
+    for ruolo in LISTA_RUOLI_MANTRA[1:]:
         df_ruolo = df_top[df_top[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo) + r'\b', case=False, na=False)]
         tot_ruolo = len(df_ruolo)
         
@@ -337,7 +365,6 @@ st.sidebar.metric(label="Rilancio MAX Assoluto", value=f"{rilancio_massimo} cr")
 
 st.sidebar.divider()
 st.sidebar.subheader("📁 File caricati da GitHub")
-st.sidebar.caption("L'app legge in automatico i file dalla repo. Puoi sostituirli qui:")
 file_caricato_m = st.sidebar.file_uploader("Sostituisci Quotazioni (.xlsx/.csv)", type=["xlsx", "csv"], key="u_main")
 file_caricato_s = st.sidebar.file_uploader("Sostituisci Fasce/Tit/Rig (.xlsx/.csv)", type=["xlsx", "csv"], key="u_sec")
 
@@ -372,7 +399,6 @@ if df is not None:
         venduti_dict = {v['Nome']: v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
 
-        # Gestione sicura del valore inflazione
         c_infl = coeff_inflazione if 'coeff_inflazione' in locals() or 'coeff_inflazione' in globals() else 1.0
 
         # ==========================================
@@ -438,7 +464,6 @@ if df is not None:
             if solo_occasioni:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
 
-            # APPLICAZIONE FILTRI SELECTBOX
             if macro_reparto != "Tutti":
                 ruoli_rep = MAPPA_REPARTI.get(macro_reparto, [])
                 df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: any(r in str(x).upper() for r in ruoli_rep))]
@@ -449,7 +474,6 @@ if df is not None:
             if cerca_nome:
                 df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
 
-            # ORDINAMENTO ALFABETICO A-Z
             if nome_col in df_filtrato.columns:
                 df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
@@ -468,7 +492,6 @@ if df is not None:
                 tit_val = min(max(tit_val, 1), 5)
                 stelle = "★" * tit_val + "☆" * (5 - tit_val)
 
-                # Tag inferiori
                 tags_list = []
                 if val_qta is not None:
                     tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
@@ -490,7 +513,6 @@ if df is not None:
                 tags_html = "".join(tags_list)
                 col_bg = get_ruolo_colore(g_rm)
 
-                # Scheda Nera Principale (Nome, Ruolo, Stelle, Tag e FVM a destra)
                 card_html = (
                     f'<div class="player-main-card">'
                     f'  <div style="display: flex; align-items: center; gap: 6px; width: 100%;">'
@@ -507,13 +529,13 @@ if df is not None:
                 )
                 st.markdown(card_html, unsafe_allow_html=True)
 
-                # Tasto Chiama compatto (senza occupare tutta la larghezza)
                 col_btn_left, col_space = st.columns([0.38, 0.62])
                 with col_btn_left:
                     if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}", use_container_width=True):
                         mostra_modal_chiamata(row.to_dict())
 
-                st.markdown('<div style="margin-bottom: 10px;"></div>', unsafe_allow_html=True)
+                # Spaziatura ridotta al minimo per compattezza su mobile
+                st.markdown('<div style="margin-bottom: 2px;"></div>', unsafe_allow_html=True)
 
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
