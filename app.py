@@ -496,9 +496,10 @@ if df is not None:
             df_filtrato = df_filtrato.head(40)
             st.write(f"Mostrando **{len(df_filtrato)}** giocatori (in ordine alfabetico A-Z):")
 
-            for _, row in df_filtrato.iterrows():
+           for _, row in df_filtrato.iterrows():
                 g_nome = row[nome_col]
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
+                g_squadra = str(row[squadra_col])[:3].upper() if me_squadra in row else "SER" if 'squadra_col' in locals() else "SER"
                 g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
                 
                 val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
@@ -529,10 +530,33 @@ if df is not None:
                 elif g_nome in venduti_dict:
                     stato_tag = f'<span class="tag-pill" style="background:#e74c3c; color:white;">VENDUTO ({venduti_dict[g_nome]} cr)</span>'
 
-                col_card, col_btn = st.columns([5, 1])
+                # LAYOUT A 3 RIGHE INTEGRATO CON PULSANTE
+                col_card, col_btn = st.columns([4, 1], vertical_alignment="center")
 
                 with col_card:
                     card_html = f"""<div class="player-card">
+                        <!-- RIGA 1: TOP (Squadra, Stelle, Tag, Stato) -->
+                        <div class="card-row-top">
+                            <span class="team-pill">{g_squadra}</span>
+                            <span class="tit-pill">{stelle}</span>
+                            {stato_tag}
+                            {tags_html}
+                        </div>
+                        <!-- RIGA 2: MIDDLE (Nome Giocatore) -->
+                        <div class="card-row-middle">
+                            <div class="player-name-title">{g_nome}</div>
+                        </div>
+                        <!-- RIGA 3: BOTTOM (Ruolo a SX, FVM a DX) -->
+                        <div class="card-row-bottom">
+                            <div class="role-pill" style="background-color: {col_bg};">{g_rm}</div>
+                            <div class="fvm-text">FVM M: <b>{val_fvm}</b></div>
+                        </div>
+                    </div>"""
+                    st.markdown(card_html, unsafe_allow_html=True)
+
+                with col_btn:
+                    if st.button("⚡ CHIAMA", key=f"btn_chiama_{g_nome}", type="primary", use_container_width=True):
+                        mostra_modal_chiamata(row.to_dict())
 <div class="player-left">
 <div class="role-badge-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>
 <div>
