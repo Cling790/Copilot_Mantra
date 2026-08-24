@@ -7,7 +7,7 @@ import os
 st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 
 # ==========================================
-# 🎨 STILI CSS PERSONALIZZATI (AZZERAMENTO TOTALE SPAZI)
+# 🎨 STILI CSS PERSONALIZZATI
 # ==========================================
 st.markdown("""
 <style>
@@ -18,6 +18,12 @@ st.markdown("""
 .element-container {
     margin-bottom: 0px !important;
     margin-top: 0px !important;
+}
+
+/* ALLINEA PERFETTAMENTE CARD E BOTTONE NELLA STESSA RIGA */
+[data-testid="column"] {
+    display: flex !important;
+    align-items: center !important;
 }
 
 /* BOTTONE CHIAMA COMPATTO */
@@ -315,12 +321,6 @@ def carica_dati_completi(file_main_user=None, file_sec_user=None):
 LIMITI = {'Portieri': 4, 'Difensori': 9, 'Centrocampisti': 9, 'Trequartisti/Attaccanti': 10}
 SLOT_TOTALI = sum(LIMITI.values())
 
-reparti_count = {'Portieri': 0, 'Difensori': 0, 'Centrocampisti': 0, 'Trequartisti/Attaccanti': 0}
-for p in st.session_state.rosa:
-    rep = get_reparto(p['RM'])
-    if rep in reparti_count:
-        reparti_count[rep] += 1
-
 tot_fvm_uscite = sum(v['FVM'] for v in st.session_state.tutti_venduti if v.get('FVM', 0) > 0)
 tot_spesa_uscite = sum(v['Prezzo'] for v in st.session_state.tutti_venduti)
 coeff_inflazione = (tot_spesa_uscite / tot_fvm_uscite) if tot_fvm_uscite > 0 else 1.0
@@ -443,7 +443,7 @@ if df is not None:
                     st.rerun()
 
         # ------------------------------------------
-        # 🔍 TAB 1: LISTONE A-Z & ASTA
+        # 🔍 TAB 1: LISTONE A-Z & ASTA (CON FILTRI DINAMICI)
         # ------------------------------------------
         with tab_asta:
             set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
@@ -455,12 +455,24 @@ if df is not None:
                     options=["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti/Attaccanti"],
                     key="filtro_macro_reparto"
                 )
+            
             with col_f2:
+                # FILTRO DINAMICO: MOSTRA SOLO I RUOLI MANTRA PERTINENTI AL REPARTO SCELTO
+                if macro_reparto == "Tutti":
+                    opzioni_ruoli = LISTA_RUOLI_MANTRA
+                else:
+                    opzioni_ruoli = ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
+                
+                # Controllo di sicurezza se il ruolo precedentemente selezionato non fa parte del nuovo reparto
+                if "filtro_ruolo_specifico" in st.session_state and st.session_state["filtro_ruolo_specifico"] not in opzioni_ruoli:
+                    st.session_state["filtro_ruolo_specifico"] = "Tutti"
+
                 ruolo_specifico = st.selectbox(
                     "🎯 Ruolo Mantra:", 
-                    options=LISTA_RUOLI_MANTRA,
+                    options=opzioni_ruoli,
                     key="filtro_ruolo_specifico"
                 )
+
             with col_f3:
                 cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome")
             with col_f4:
@@ -555,7 +567,6 @@ if df is not None:
                     f'</div>'
                 )
 
-                # DISPOSIZIONE ORIZZONTALE AFFIANCATA (CARD + BOTTONE CHIAMA)
                 c_card, c_btn = st.columns([0.84, 0.16])
                 with c_card:
                     st.markdown(card_html, unsafe_allow_html=True)
