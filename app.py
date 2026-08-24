@@ -11,31 +11,26 @@ st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 # ==========================================
 st.markdown("""
 <style>
-/* Card ultra-compatta per mobile */
-.player-card-compact {
-    background-color: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 6px 10px;
-    margin-bottom: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+/* Riduzione margini per massima densità su mobile */
+div[data-testid="column"] {
+    padding: 0px 2px !important;
 }
 
-/* Riga 1: Ruolo | Nome | Squadra | Stelle | FVM */
+/* Container principale della riga */
 .player-main-line {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: nowrap;
+    gap: 5px;
+    width: 100%;
     overflow: hidden;
+    height: 28px;
 }
 
-/* Cerchio Ruolo Colorato */
+/* 1. Cerchio Ruolo Colorato */
 .role-badge-circle {
-    min-width: 28px;
-    height: 28px;
+    min-width: 26px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -44,63 +39,71 @@ st.markdown("""
     font-weight: 800;
     color: #ffffff;
     flex-shrink: 0;
-    text-shadow: 0px 1px 2px rgba(0,0,0,0.5);
+    box-shadow: 0px 1px 3px rgba(0,0,0,0.5);
 }
 
+/* 2. Nome Giocatore */
 .player-name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     color: #ffffff;
+    max-width: 115px;
 }
 
+/* 3. Badge Squadra */
 .team-pill {
-    font-size: 10px;
-    font-weight: 600;
-    background: #333;
-    padding: 1px 5px;
+    font-size: 9px;
+    font-weight: 700;
+    background: #2b2b2b;
+    padding: 1px 4px;
     border-radius: 4px;
-    color: #bbb;
+    color: #cccccc;
     flex-shrink: 0;
+    border: 1px solid #3a3a3a;
 }
 
+/* 4. Stelle Titolarità */
 .tit-stars {
-    font-size: 11px;
+    font-size: 10px;
     color: #f1c40f;
     flex-shrink: 0;
     letter-spacing: -1px;
 }
 
+/* 5. Badge FVM M */
 .fvm-mini {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    padding: 1px 6px;
+    background: #143322;
+    border: 1px solid #27ae60;
+    padding: 1px 5px;
     border-radius: 4px;
     color: #2ecc71;
-    margin-left: auto;
     flex-shrink: 0;
+    margin-left: auto; /* Spinge FVM a destra prima del tasto Chiama */
 }
 
-/* Riga 2: Tag Minori (Qt.a, Fascia, Rigorista, Note) */
+/* Riga Secondaria: Tag piccoli sotto (allineati sotto il Nome) */
 .player-sub-line {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     flex-wrap: wrap;
-    padding-left: 36px; /* Allineato sotto il nome */
+    margin-top: 2px;
+    margin-bottom: 6px;
+    padding-left: 31px; /* Salta il cerchio del ruolo per allinearsi al nome */
 }
 
 .tag-pill-mini {
-    font-size: 9px;
-    padding: 1px 5px;
+    font-size: 8px;
+    padding: 1px 4px;
     border-radius: 3px;
-    background: #262626;
+    background: #222222;
     color: #aaa;
-    border: 1px solid #3d3d3d;
+    border: 1px solid #333333;
     white-space: nowrap;
 }
 
@@ -108,26 +111,42 @@ st.markdown("""
     background: #0055ff !important;
     color: #fff !important;
     font-weight: bold;
+    border: none !important;
 }
 
 .tag-status-venduto {
-    background: #e74c3c !important;
+    background: #c0392b !important;
     color: #fff !important;
     font-weight: bold;
+    border: none !important;
 }
 
 .tag-affare {
     background: #d35400 !important;
     color: #fff !important;
     font-weight: bold;
+    border: none !important;
 }
 
-/* Riduzione dimensioni bottone Chiama */
-div[data-testid="stButton"] button {
-    padding: 2px 6px !important;
-    font-size: 11px !important;
-    min-height: 32px !important;
-    height: 32px !important;
+/* 6. Tasto Chiama ultra-compatto e integrato in riga */
+div[data-testid="stButton"] > button {
+    padding: 0px 4px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    line-height: 1 !important;
+    border-radius: 5px !important;
+    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
+    color: #ffffff !important;
+    border: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+div[data-testid="stButton"] > button:hover {
+    background: linear-gradient(135deg, #ffa726, #fb8c00) !important;
+    color: #ffffff !important;
 }
 </style>
 """, unsafe_allow_html=True)
