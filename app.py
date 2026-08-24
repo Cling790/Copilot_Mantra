@@ -15,11 +15,45 @@ st.markdown("""
 [data-testid="stVerticalBlock"] { gap: 2px !important; }
 .element-container { margin-bottom: 0px !important; margin-top: 0px !important; }
 
+/* =========================================================
+   🔥 FIX DEFINITIVO PER IL MOBILE: IMPEDISCE DI ANDARE A CAPO 
+   ========================================================= */
+/* Forza la riga orizzontale per i blocchi che contengono i giocatori */
+[data-testid="stHorizontalBlock"]:has(.player-main-card) {
+    flex-wrap: nowrap !important;
+    flex-direction: row !important;
+    align-items: center !important;
+}
+
+/* Fissa la larghezza della card su mobile (85%) */
+[data-testid="stHorizontalBlock"]:has(.player-main-card) > [data-testid="column"]:nth-child(1) {
+    width: 85% !important;
+    min-width: 85% !important;
+    flex: 1 1 85% !important;
+}
+
+/* Fissa la larghezza del bottone su mobile (15%) */
+[data-testid="stHorizontalBlock"]:has(.player-main-card) > [data-testid="column"]:nth-child(2) {
+    width: 15% !important;
+    min-width: 15% !important;
+    flex: 1 1 15% !important;
+}
+
+/* Centra il bottone nel suo contenitore */
+div.stButton {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
 /* BOTTONE "CHIAMA" GIGANTE E QUADRATO PER MOBILE */
 div.stButton > button {
     height: 100% !important;
-    min-height: 48px !important; /* Molto comodo per il tap col dito */
-    font-size: 22px !important;  /* Icona grande */
+    width: 100% !important;
+    min-height: 54px !important; /* Altezza allineata alla card */
+    font-size: 24px !important;  /* Icona bella grande */
     padding: 0px !important;
     margin: 0px !important;
     border-radius: 8px !important;
@@ -37,7 +71,7 @@ div.stButton > button {
     display: flex !important;
     flex-direction: column !important;
     gap: 6px !important;
-    overflow: hidden !important; /* Previene sbavature */
+    overflow: hidden !important; 
 }
 
 /* Badge Ruolo Adattivo (Capsula) */
@@ -128,12 +162,9 @@ def carica_backup():
 
 carica_backup()
 
-if 'rosa' not in st.session_state:
-    st.session_state.rosa = []
-if 'tutti_venduti' not in st.session_state:
-    st.session_state.tutti_venduti = []
-if 'autenticato' not in st.session_state:
-    st.session_state.autenticato = False
+if 'rosa' not in st.session_state: st.session_state.rosa = []
+if 'tutti_venduti' not in st.session_state: st.session_state.tutti_venduti = []
+if 'autenticato' not in st.session_state: st.session_state.autenticato = False
 
 def rimuovi_giocatore(nome_giocatore):
     st.session_state.rosa = [p for p in st.session_state.rosa if p['Nome'] != nome_giocatore]
@@ -191,10 +222,10 @@ SCHEMI_MANTRA = {
 
 def get_ruolo_colore(rm_str):
     rm_upper = str(rm_str).upper()
-    if any(r in rm_upper for r in ['PC', 'A', 'W']): return '#e74c3c'  # Rosso
-    elif any(r in rm_upper for r in ['T', 'C', 'M', 'E']): return '#2980b9'  # Blu
-    elif any(r in rm_upper for r in ['DD', 'DS', 'DC', 'B']): return '#27ae60'  # Verde
-    return '#f39c12'  # Giallo
+    if any(r in rm_upper for r in ['PC', 'A', 'W']): return '#e74c3c'
+    elif any(r in rm_upper for r in ['T', 'C', 'M', 'E']): return '#2980b9'
+    elif any(r in rm_upper for r in ['DD', 'DS', 'DC', 'B']): return '#27ae60'
+    return '#f39c12'
 
 def get_reparto(rm_str):
     rm_str = str(rm_str).upper()
@@ -409,7 +440,6 @@ if df is not None:
                 tags_html = "".join(tags_list)
                 col_bg = get_ruolo_colore(g_rm)
 
-                # NOTA: flex-wrap: wrap inserito qui sotto per evitare lo scorrimento orizzontale dei tag
                 card_html = (
                     f'<div class="player-main-card">'
                     f'  <div style="display: flex; align-items: center; gap: 6px; width: 100%;">'
@@ -425,8 +455,8 @@ if df is not None:
                     f'</div>'
                 )
 
-                # Layout ottimizzato: 88% alla card, 12% al bottone "⚡" senza etichetta di testo
-                c_card, c_btn = st.columns([0.88, 0.12], vertical_alignment="center")
+                # FORZIAMO PROPORZIONI 85% E 15% (ora fissate anche dal CSS su mobile)
+                c_card, c_btn = st.columns([0.85, 0.15], vertical_alignment="center")
                 with c_card:
                     st.markdown(card_html, unsafe_allow_html=True)
                 with c_btn:
