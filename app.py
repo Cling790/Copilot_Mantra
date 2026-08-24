@@ -11,136 +11,154 @@ st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 # ==========================================
 st.markdown("""
 <style>
-/* Riduzione margini per massima densità su mobile */
+/* Riduzione drastica dei margini verticali nativi di Streamlit */
+div[data-testid="stVerticalBlock"] > div {
+    gap: 0px !important;
+    padding-bottom: 2px !important;
+}
+
 div[data-testid="column"] {
     padding: 0px 2px !important;
 }
 
-/* Container principale della riga */
-.player-main-line {
+/* Card Scura Ultra-Compatta (Garantisce visibilità sia in Tema Chiaro che Scuro) */
+.player-row-card {
+    background-color: #1e1e24;
+    border: 1px solid #343a40;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin-bottom: 3px;
     display: flex;
-    align-items: center;
-    gap: 5px;
-    width: 100%;
-    overflow: hidden;
-    height: 28px;
+    flex-direction: column;
+    justify-content: center;
 }
 
-/* 1. Cerchio Ruolo Colorato */
-.role-badge-circle {
-    min-width: 26px;
-    width: 26px;
-    height: 26px;
+/* Riga 1: Ruolo | Nome | Squadra | Stelle | FVM */
+.row-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Cerchio Ruolo Colorato */
+.role-circle {
+    min-width: 25px;
+    width: 25px;
+    height: 25px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 10px;
     font-weight: 800;
-    color: #ffffff;
+    color: #ffffff !important;
     flex-shrink: 0;
-    box-shadow: 0px 1px 3px rgba(0,0,0,0.5);
 }
 
-/* 2. Nome Giocatore */
-.player-name {
+/* Nome del giocatore (Bianco nitido sempre visibile sulla card scura) */
+.player-name-text {
     font-size: 13px;
     font-weight: 700;
+    color: #ffffff !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: #ffffff;
-    max-width: 115px;
+    max-width: 140px;
 }
 
-/* 3. Badge Squadra */
-.team-pill {
+/* Squadra */
+.team-badge {
     font-size: 9px;
     font-weight: 700;
-    background: #2b2b2b;
-    padding: 1px 4px;
-    border-radius: 4px;
-    color: #cccccc;
+    background: #343a40;
+    color: #e0e0e0 !important;
+    padding: 1px 5px;
+    border-radius: 3px;
     flex-shrink: 0;
-    border: 1px solid #3a3a3a;
 }
 
-/* 4. Stelle Titolarità */
-.tit-stars {
+/* Stelle */
+.stars-text {
     font-size: 10px;
-    color: #f1c40f;
+    color: #f1c40f !important;
     flex-shrink: 0;
     letter-spacing: -1px;
 }
 
-/* 5. Badge FVM M */
-.fvm-mini {
+/* Badge FVM M (Spinto a destra) */
+.fvm-badge {
     font-size: 10px;
     font-weight: 700;
-    background: #143322;
+    background: #0f381e;
+    color: #2ecc71 !important;
     border: 1px solid #27ae60;
     padding: 1px 5px;
     border-radius: 4px;
-    color: #2ecc71;
+    margin-left: auto;
     flex-shrink: 0;
-    margin-left: auto; /* Spinge FVM a destra prima del tasto Chiama */
 }
 
-/* Riga Secondaria: Tag piccoli sotto (allineati sotto il Nome) */
-.player-sub-line {
+/* Riga 2: Tag Piccoli (Qt.a, Fascia, Rigorista) sotto il nome */
+.row-bottom {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     flex-wrap: wrap;
     margin-top: 2px;
-    margin-bottom: 6px;
-    padding-left: 31px; /* Salta il cerchio del ruolo per allinearsi al nome */
+    padding-left: 31px; /* Allineato sotto il nome */
 }
 
-.tag-pill-mini {
+.tag-micro {
     font-size: 8px;
+    font-weight: 600;
     padding: 1px 4px;
     border-radius: 3px;
-    background: #222222;
-    color: #aaa;
-    border: 1px solid #333333;
+    background: #2b2c34;
+    color: #b0b0b0 !important;
+    border: 1px solid #3d3e48;
     white-space: nowrap;
 }
 
-.tag-status-mio {
+.tag-mio-style {
     background: #0055ff !important;
-    color: #fff !important;
+    color: #ffffff !important;
     font-weight: bold;
     border: none !important;
 }
 
-.tag-status-venduto {
+.tag-venduto-style {
     background: #c0392b !important;
-    color: #fff !important;
+    color: #ffffff !important;
     font-weight: bold;
     border: none !important;
 }
 
-.tag-affare {
+.tag-affare-style {
     background: #d35400 !important;
-    color: #fff !important;
+    color: #ffffff !important;
     font-weight: bold;
     border: none !important;
 }
 
-/* 6. Tasto Chiama ultra-compatto e integrato in riga */
+/* Tasto Chiama ultra-compatto */
+div[data-testid="stButton"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
 div[data-testid="stButton"] > button {
-    padding: 0px 4px !important;
-    font-size: 10px !important;
-    font-weight: 800 !important;
-    height: 26px !important;
-    min-height: 26px !important;
+    padding: 2px 4px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    height: 31px !important;
+    min-height: 31px !important;
     line-height: 1 !important;
     border-radius: 5px !important;
     background: linear-gradient(135deg, #ff9800, #f57c00) !important;
     color: #ffffff !important;
     border: none !important;
-    margin: 0 !important;
     width: 100% !important;
 }
 
@@ -554,49 +572,50 @@ if df is not None:
                 tit_val = min(max(tit_val, 1), 5)
                 stelle = "★" * tit_val + "☆" * (5 - tit_val)
 
-                # Costruzione tag inferiori (più piccoli)
+                # Tag inferiori micro
                 tags_list = []
                 if val_qta is not None:
-                    tags_list.append(f'<span class="tag-pill-mini">Qt.a {val_qta}</span>')
+                    tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
                 if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']:
-                    tags_list.append(f'<span class="tag-pill-mini">{str(row[fascia_col]).strip()}</span>')
+                    tags_list.append(f'<span class="tag-micro">{str(row[fascia_col]).strip()}</span>')
                 if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
-                    tags_list.append('<span class="tag-pill-mini">⚽ Rig</span>')
+                    tags_list.append('<span class="tag-micro">⚽ Rig</span>')
                 if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
                     for t in str(row[note_col]).split(','):
-                        tags_list.append(f'<span class="tag-pill-mini">{t.strip()}</span>')
+                        tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
                 if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
-                    tags_list.append('<span class="tag-pill-mini tag-affare">🔥 AFFARE</span>')
+                    tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
                 
-                # Tag di stato acquisto (Mio / Venduto)
+                # Tag Stato Acquisto (Mio / Venduto)
                 if g_nome in miei_nomi:
-                    tags_list.insert(0, f'<span class="tag-pill-mini tag-status-mio">MIO ({miei_nomi[g_nome]} cr)</span>')
+                    tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
                 elif g_nome in venduti_dict:
-                    tags_list.insert(0, f'<span class="tag-pill-mini tag-status-venduto">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
+                    tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
 
                 tags_html = "".join(tags_list)
                 col_bg = get_ruolo_colore(g_rm)
 
-                # Layout a colonne affiancate: [Info Principali 83%] [Tasto Chiama 17%]
-                col_left, col_right = st.columns([0.83, 0.17], vertical_alignment="top")
+                # Layout a colonne compatto [Card Info 86%] [Bottone 14%]
+                col_left, col_right = st.columns([0.86, 0.14], vertical_alignment="center")
 
                 with col_left:
-                    main_line_html = (
-                        f'<div class="player-main-line">'
-                        f'  <div class="role-badge-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
-                        f'  <span class="player-name">{g_nome}</span>'
-                        f'  <span class="team-pill">{g_squadra}</span>'
-                        f'  <span class="tit-stars">{stelle}</span>'
-                        f'  <span class="fvm-mini">{val_fvm} FVM</span>'
-                        f'</div>'
-                        f'<div class="player-sub-line">'
-                        f'  {tags_html}'
+                    card_html = (
+                        f'<div class="player-row-card">'
+                        f'  <div class="row-top">'
+                        f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
+                        f'    <span class="player-name-text">{g_nome}</span>'
+                        f'    <span class="team-badge">{g_squadra}</span>'
+                        f'    <span class="stars-text">{stelle}</span>'
+                        f'    <span class="fvm-badge">{val_fvm} FVM</span>'
+                        f'  </div>'
+                        f'  <div class="row-bottom">'
+                        f'    {tags_html}'
+                        f'  </div>'
                         f'</div>'
                     )
-                    st.markdown(main_line_html, unsafe_allow_html=True)
+                    st.markdown(card_html, unsafe_allow_html=True)
 
                 with col_right:
-                    # Tasto chiama allineato esattamente sulla riga del nome
                     if st.button("⚡ Chiama", key=f"btn_chiama_{g_nome}"):
                         mostra_modal_chiamata(row.to_dict())
         # ------------------------------------------
