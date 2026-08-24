@@ -10,102 +10,126 @@ st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 # 🎨 STILI CSS PERSONALIZZATI (DARK CARDS)
 # ==========================================
 st.markdown("""
-    <style>
-    html, body, [data-testid="stAppViewContainer"] {
-        background-color: #0e1117;
-    }
-    
-    .player-card {
-        background-color: #161a23;
-        border: 1px solid #282e3d;
-        border-radius: 12px;
-        padding: 12px 16px;
-        margin-bottom: 6px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        color: white;
-    }
-    
-    .card-row-top {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    
-    .card-row-middle {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin: 2px 0;
-    }
-    
-    .player-name-title {
-        font-size: 20px;
-        font-weight: 800;
-        color: #ffffff;
-        letter-spacing: 0.5px;
-    }
-    
-    .card-row-bottom {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-top: 2px;
-    }
-    
-    .role-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 3px 10px;
-        border-radius: 6px;
-        font-weight: 800;
-        font-size: 13px;
-        color: white;
-    }
+<style>
+/* Card ultra-compatta per mobile */
+.player-card-compact {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
 
-    .team-pill {
-        background-color: #2b3245;
-        color: #d1d5db;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 5px;
-        text-transform: uppercase;
-    }
-    
-    .tit-pill {
-        background-color: #1e293b;
-        color: #f1c40f;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 5px;
-        letter-spacing: 1px;
-    }
+/* Riga 1: Ruolo | Nome | Squadra | Stelle | FVM */
+.player-main-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
 
-    .tag-pill {
-        background-color: #232936;
-        color: #a0aec0;
-        font-size: 11px;
-        padding: 2px 7px;
-        border-radius: 6px;
-        border: 1px solid #323b4e;
-    }
-    
-    .fvm-text {
-        font-size: 13px;
-        font-weight: 700;
-        color: #94a3b8;
-    }
+/* Cerchio Ruolo Colorato */
+.role-badge-circle {
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: #ffffff;
+    flex-shrink: 0;
+    text-shadow: 0px 1px 2px rgba(0,0,0,0.5);
+}
 
-    .fvm-text b {
-        color: #38bdf8;
-        font-size: 15px;
-    }
-    </style>
+.player-name {
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #ffffff;
+}
+
+.team-pill {
+    font-size: 10px;
+    font-weight: 600;
+    background: #333;
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #bbb;
+    flex-shrink: 0;
+}
+
+.tit-stars {
+    font-size: 11px;
+    color: #f1c40f;
+    flex-shrink: 0;
+    letter-spacing: -1px;
+}
+
+.fvm-mini {
+    font-size: 11px;
+    font-weight: 700;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: #2ecc71;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Riga 2: Tag Minori (Qt.a, Fascia, Rigorista, Note) */
+.player-sub-line {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    padding-left: 36px; /* Allineato sotto il nome */
+}
+
+.tag-pill-mini {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: #262626;
+    color: #aaa;
+    border: 1px solid #3d3d3d;
+    white-space: nowrap;
+}
+
+.tag-status-mio {
+    background: #0055ff !important;
+    color: #fff !important;
+    font-weight: bold;
+}
+
+.tag-status-venduto {
+    background: #e74c3c !important;
+    color: #fff !important;
+    font-weight: bold;
+}
+
+.tag-affare {
+    background: #d35400 !important;
+    color: #fff !important;
+    font-weight: bold;
+}
+
+/* Riduzione dimensioni bottone Chiama */
+div[data-testid="stButton"] button {
+    padding: 2px 6px !important;
+    font-size: 11px !important;
+    min-height: 32px !important;
+    height: 32px !important;
+}
+</style>
 """, unsafe_allow_html=True)
 
 # ==========================================
@@ -511,48 +535,45 @@ if df is not None:
                 tit_val = min(max(tit_val, 1), 5)
                 stelle = "★" * tit_val + "☆" * (5 - tit_val)
 
+                # Costruzione tag inferiori (più piccoli)
                 tags_list = []
                 if val_qta is not None:
-                    tags_list.append(f"Qt.a {val_qta}")
+                    tags_list.append(f'<span class="tag-pill-mini">Qt.a {val_qta}</span>')
                 if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']:
-                    tags_list.append(str(row[fascia_col]).strip())
+                    tags_list.append(f'<span class="tag-pill-mini">{str(row[fascia_col]).strip()}</span>')
                 if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
-                    tags_list.append("Rig")
+                    tags_list.append('<span class="tag-pill-mini">⚽ Rig</span>')
                 if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
-                    tags_list.extend([t.strip() for t in str(row[note_col]).split(',')])
+                    for t in str(row[note_col]).split(','):
+                        tags_list.append(f'<span class="tag-pill-mini">{t.strip()}</span>')
                 if g_nome in set_occasioni and g_nome not in nomi_venduti_totali:
-                    tags_list.append("🔥 AFFARE")
+                    tags_list.append('<span class="tag-pill-mini tag-affare">🔥 AFFARE</span>')
                 
-                tags_html = "".join([f'<span class="tag-pill">{t}</span> ' for t in tags_list])
-                col_bg = get_ruolo_colore(g_rm)
-                
-                stato_tag = ""
+                # Tag di stato acquisto (Mio / Venduto)
                 if g_nome in miei_nomi:
-                    stato_tag = f'<span class="tag-pill" style="background:#0055ff; color:white;">MIO ({miei_nomi[g_nome]} cr)</span>'
+                    tags_list.insert(0, f'<span class="tag-pill-mini tag-status-mio">MIO ({miei_nomi[g_nome]} cr)</span>')
                 elif g_nome in venduti_dict:
-                    stato_tag = f'<span class="tag-pill" style="background:#e74c3c; color:white;">VENDUTO ({venduti_dict[g_nome]} cr)</span>'
+                    tags_list.insert(0, f'<span class="tag-pill-mini tag-status-venduto">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
 
-                col_card, col_btn = st.columns([5, 1])
+                tags_html = "".join(tags_list)
+                col_bg = get_ruolo_colore(g_rm)
+
+                # Layout ultra-compatto: [Card 85%] [Bottone 15%]
+                col_card, col_btn = st.columns([5.5, 1.2], vertical_alignment="center")
 
                 with col_card:
                     card_html = (
-                        f'<div class="player-card">'
-                        f'<div class="player-left">'
-                        f'<div class="role-badge-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
-                        f'<div>'
-                        f'<div style="display:flex; align-items:center; gap:8px;">'
-                        f'<span class="team-pill">{g_squadra}</span>'
-                        f'<span class="tit-pill">{stelle}</span>'
-                        f'{stato_tag}'
-                        f'</div>'
-                        f'<div style="font-size:18px; font-weight:700; margin:2px 0;">{g_nome}</div>'
-                        f'<div style="display:flex; gap:5px; margin-top:3px;">{tags_html}</div>'
-                        f'</div>'
-                        f'</div>'
-                        f'<div class="fvm-box">'
-                        f'<div class="fvm-val">{val_fvm}</div>'
-                        f'<div class="fvm-label">FVM M</div>'
-                        f'</div>'
+                        f'<div class="player-card-compact">'
+                        f'  <div class="player-main-line">'
+                        f'    <div class="role-badge-circle" style="background-color: {col_bg};">{g_rm[:4]}</div>'
+                        f'    <span class="player-name">{g_nome}</span>'
+                        f'    <span class="team-pill">{g_squadra}</span>'
+                        f'    <span class="tit-stars">{stelle}</span>'
+                        f'    <span class="fvm-mini">{val_fvm} FVM</span>'
+                        f'  </div>'
+                        f'  <div class="player-sub-line">'
+                        f'    {tags_html}'
+                        f'  </div>'
                         f'</div>'
                     )
                     st.markdown(card_html, unsafe_allow_html=True)
