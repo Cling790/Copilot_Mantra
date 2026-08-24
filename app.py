@@ -7,57 +7,71 @@ import os
 st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 
 # ==========================================
-# 🎨 STILI CSS PERSONALIZZATI (OTTIMIZZATI PER MOBILE - NO SCROLL ORIZZONTALE)
+# 🎨 STILI CSS PERSONALIZZATI (FIX DEFINITIVO MOBILE NO-SCROLL)
 # ==========================================
 st.markdown("""
 <style>
-/* AZZERA IL GAP VERTICALE TRA ELEMENTI */
+/* 1. AZZERA I MARGINI DI PAGINA STREAMLIT (Causa principale dello scroll mobile) */
+.main .block-container {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    padding-top: 2rem !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
+/* 2. AZZERA GAP VERTICALI TRA RIGHE */
 [data-testid="stVerticalBlock"] { gap: 2px !important; }
 .element-container { margin-bottom: 0px !important; margin-top: 0px !important; }
 
-/* =========================================================
-   🔥 FIX MOBILE: RIGA UNICA SENZA MAI SFORARE LO SCHERMO
-   ========================================================= */
-[data-testid="stHorizontalBlock"]:has(.player-main-card) {
+/* 3. FORZA LA RIGA UNICA SULLE COLONNE */
+[data-testid="stHorizontalBlock"] {
     display: flex !important;
-    flex-wrap: nowrap !important;
     flex-direction: row !important;
+    flex-wrap: nowrap !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 4px !important;
     width: 100% !important;
+    max-width: 100% !important;
     box-sizing: border-box !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 3px !important;
 }
 
-/* Colonna 1 (Card): Occupa tutto lo spazio disponibile rimanente */
-[data-testid="stHorizontalBlock"]:has(.player-main-card) > [data-testid="column"]:nth-child(1) {
+/* DISABILITA MIN-WIDTH NATIVO DI STREAMLIT */
+[data-testid="stColumn"], [data-testid="column"] {
+    min-width: 0 !important;
+    padding: 0 !important;
+}
+
+/* COLONNA 1: CARD NERA (Prende esattamente il 100% meno i 46px del tasto+gap) */
+[data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1),
+[data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
     flex: 1 1 auto !important;
-    width: auto !important;
+    width: calc(100% - 46px) !important;
     min-width: 0 !important;
 }
 
-/* Colonna 2 (Bottone ⚡): Larghezza fissa e sicura (44px), zero overflow */
-[data-testid="stHorizontalBlock"]:has(.player-main-card) > [data-testid="column"]:nth-child(2) {
-    flex: 0 0 44px !important;
-    width: 44px !important;
-    min-width: 44px !important;
+/* COLONNA 2: TASTO FULMINE (Fisso a 42px, mai più largo, mai più stretto) */
+[data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2),
+[data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) {
+    flex: 0 0 42px !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
 }
 
-/* Contenitore interno del bottone */
+/* CONTENITORE E STILE BOTTONE */
 div.stButton {
     width: 100% !important;
     height: 100% !important;
     display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
 }
 
-/* BOTTONE "CHIAMA" QUADRATO E COMODO PER IL POLLICE */
 div.stButton > button {
     height: 100% !important;
     width: 100% !important;
-    min-height: 48px !important; 
-    font-size: 20px !important;  
+    min-height: 44px !important; 
+    font-size: 18px !important;  
     padding: 0px !important;
     margin: 0px !important;
     border-radius: 6px !important;
@@ -68,20 +82,20 @@ div.stButton > button {
     background-color: #1a1b20 !important;
     border: 1px solid #343a40 !important;
     border-radius: 8px !important;
-    padding: 6px 8px !important;
+    padding: 4px 6px !important;
     width: 100% !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 4px !important;
+    gap: 2px !important;
     overflow: hidden !important; 
 }
 
 /* Badge Ruolo Adattivo (Capsula) */
 .role-circle {
-    min-width: 30px; 
+    min-width: 28px; 
     height: 18px; 
-    padding: 0 4px;
+    padding: 0 3px;
     border-radius: 4px; 
     display: flex; 
     align-items: center; 
@@ -93,9 +107,9 @@ div.stButton > button {
     white-space: nowrap;
 }
 
-/* Nome Giocatore - con min-width: 0 per permettere l'ellipsis su flexbox */
+/* Nome Giocatore (con ellipsis se troppo lungo su telefoni piccoli) */
 .player-name-text {
-    font-size: 13px; font-weight: 700; color: #ffffff !important;
+    font-size: 12px; font-weight: 700; color: #ffffff !important;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
     flex-grow: 1; flex-shrink: 1; min-width: 0;
 }
@@ -103,22 +117,22 @@ div.stButton > button {
 /* Badge Squadra */
 .team-badge {
     font-size: 9px; font-weight: 700; background: #343a40; color: #e0e0e0 !important;
-    padding: 2px 4px; border-radius: 3px; flex-shrink: 0;
+    padding: 1px 3px; border-radius: 3px; flex-shrink: 0;
 }
 
 /* Stelle */
-.stars-text { font-size: 9px; color: #f1c40f !important; flex-shrink: 0; letter-spacing: -1px; }
+.stars-text { font-size: 8px; color: #f1c40f !important; flex-shrink: 0; letter-spacing: -1px; }
 
 /* Badge FVM */
 .fvm-badge-right {
     font-size: 9px; font-weight: 700; background: #0f381e; color: #2ecc71 !important;
-    border: 1px solid #27ae60; padding: 2px 4px; border-radius: 4px;
+    border: 1px solid #27ae60; padding: 1px 4px; border-radius: 4px;
     text-align: center; white-space: nowrap; flex-shrink: 0;
 }
 
 /* Tag micro inferiori */
 .tag-micro {
-    font-size: 9px; padding: 1px 4px; border-radius: 3px; background: #2b2c34;
+    font-size: 8px; padding: 1px 3px; border-radius: 3px; background: #2b2c34;
     color: #b0b0b0 !important; border: 1px solid #3d3e48; white-space: nowrap;
 }
 .tag-mio-style { background: #0055ff !important; color: #ffffff !important; font-weight: bold; border: none !important; }
@@ -126,8 +140,8 @@ div.stButton > button {
 .tag-affare-style { background: #d35400 !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 
 /* STILE TAB */
-.stTabs [data-baseweb="tab-list"] { gap: 6px !important; background-color: #1e1f26 !important; padding: 6px !important; border-radius: 8px !important; }
-.stTabs [data-baseweb="tab"] { background-color: #2e3039 !important; color: #b0b0b0 !important; border-radius: 6px !important; padding: 6px 12px !important; font-size: 12px !important; border: none !important; }
+.stTabs [data-baseweb="tab-list"] { gap: 4px !important; background-color: #1e1f26 !important; padding: 4px !important; border-radius: 8px !important; }
+.stTabs [data-baseweb="tab"] { background-color: #2e3039 !important; color: #b0b0b0 !important; border-radius: 6px !important; padding: 4px 8px !important; font-size: 11px !important; border: none !important; }
 .stTabs [aria-selected="true"] { background-color: #52545f !important; color: #ffffff !important; font-weight: bold !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -445,21 +459,21 @@ if df is not None:
 
                 card_html = (
                     f'<div class="player-main-card">'
-                    f'  <div style="display: flex; align-items: center; gap: 6px; width: 100%;">'
+                    f'  <div style="display: flex; align-items: center; gap: 4px; width: 100%;">'
                     f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm}</div>'
                     f'    <span class="player-name-text">{g_nome}</span>'
                     f'    <span class="team-badge">{g_squadra}</span>'
                     f'    <span class="stars-text">{stelle}</span>'
                     f'    <div class="fvm-badge-right">{val_fvm} FVM</div>'
                     f'  </div>'
-                    f'  <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">'
+                    f'  <div style="display: flex; align-items: center; gap: 3px; flex-wrap: wrap;">'
                     f'    {tags_html}'
                     f'  </div>'
                     f'</div>'
                 )
 
-                # Layout a larghezza fissa (card fluida + bottone fisso a destra dentro lo schermo)
-                c_card, c_btn = st.columns([0.85, 0.15], vertical_alignment="center")
+                # Colonna Card + Colonna Tasto
+                c_card, c_btn = st.columns([1, 1], vertical_alignment="center")
                 with c_card:
                     st.markdown(card_html, unsafe_allow_html=True)
                 with c_btn:
