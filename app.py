@@ -7,28 +7,34 @@ import os
 st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
 
 # ==========================================
-# 🎨 STILI CSS PERSONALIZZATI (FORZATURA COMPACT & TAB GRIGI)
+# 🎨 STILI CSS PERSONALIZZATI (AZZERAMENTO TOTALE SPAZI)
 # ==========================================
 st.markdown("""
 <style>
-/* 1. RIDUZIONE SPAZIATURA ELEMENTI STREAMLIT (ELIMINA SPAZIO SOTTO BOTTONI) */
-.element-container:has(div.stButton) {
-    margin-bottom: -12px !important;
+/* AZZERA IL GAP VERTICALE DI STREAMLIT TRA GLI ELEMENTI */
+[data-testid="stVerticalBlock"] {
+    gap: 2px !important;
 }
+.element-container {
+    margin-bottom: 0px !important;
+    margin-top: 0px !important;
+}
+
+/* BOTTONE CHIAMA COMPATTO */
 div.stButton > button {
-    min-height: 26px !important;
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
+    min-height: 24px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
     margin: 0px !important;
 }
 
-/* 2. RIGA NERA PRINCIPALE DEL GIOCATORE */
+/* RIGA NERA PRINCIPALE DEL GIOCATORE */
 .player-main-card {
     background-color: #1a1b20 !important;
     border: 1px solid #343a40 !important;
     border-radius: 8px !important;
     padding: 6px 8px !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 0px !important;
     width: 100% !important;
     box-sizing: border-box !important;
     display: flex !important;
@@ -74,7 +80,7 @@ div.stButton > button {
     text-align: center; white-space: nowrap; flex-shrink: 0;
 }
 
-/* 3. STILE TAB GRIGI E COMPATTI */
+/* STILE TAB GRIGI E COMPATTI */
 .stTabs [data-baseweb="tab-list"] {
     gap: 6px !important;
     background-color: #1e1f26 !important;
