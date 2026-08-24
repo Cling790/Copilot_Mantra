@@ -19,34 +19,53 @@ st.markdown("""
         background-color: #161a23;
         border: 1px solid #282e3d;
         border-radius: 12px;
-        padding: 10px 14px;
-        margin-bottom: 8px;
+        padding: 12px 16px;
+        margin-bottom: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        color: white;
+    }
+    
+    .card-row-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .card-row-middle {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        color: white;
+        margin: 2px 0;
     }
     
-    .player-left {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+    .player-name-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: 0.5px;
     }
     
-    .role-badge-circle {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
+    .card-row-bottom {
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: space-between;
+        margin-top: 2px;
+    }
+    
+    .role-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 6px;
         font-weight: 800;
         font-size: 13px;
         color: white;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
-    
+
     .team-pill {
         background-color: #2b3245;
         color: #d1d5db;
@@ -76,25 +95,15 @@ st.markdown("""
         border: 1px solid #323b4e;
     }
     
-    .fvm-box {
-        background-color: #1d6bf3;
-        color: white;
-        border-radius: 8px;
-        padding: 6px 12px;
-        text-align: center;
-        min-width: 70px;
-        box-shadow: 0 2px 8px rgba(29, 107, 243, 0.4);
+    .fvm-text {
+        font-size: 13px;
+        font-weight: 700;
+        color: #94a3b8;
     }
-    .fvm-val {
-        font-size: 18px;
-        font-weight: 800;
-        line-height: 1.1;
-    }
-    .fvm-label {
-        font-size: 9px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        opacity: 0.9;
+
+    .fvm-text b {
+        color: #38bdf8;
+        font-size: 15px;
     }
     </style>
 """, unsafe_allow_html=True)
