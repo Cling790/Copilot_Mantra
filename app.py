@@ -350,13 +350,20 @@ if df is not None:
         nome_col = next((c for c in colonne if str(c).lower() in ['nome', 'calciatore']), 'Nome')
         rm_col = next((c for c in colonne if str(c).upper() == 'RM'), 'RM')
         squadra_col = next((c for c in colonne if str(c).lower() in ['squadra', 'club']), 'Squadra')
-        fvm_col = next((c for c in colonne if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm']), None)
-        qta_col = next((c for c in colonne if str(c).lower() in ['qt.a m', 'qt.a', 'qta m', 'qta', 'quotazione']), None)
+        
+        # Forziamo la lettura dei valori specifici Mantra
+        fvm_col = next((c for c in colonne if str(c).strip().lower() == 'fvm m'), None)
+        if not fvm_col: 
+            fvm_col = next((c for c in colonne if 'fvm' in str(c).lower()), None)
+            
+        qta_col = next((c for c in colonne if str(c).strip().lower() in ['qt.a m', 'qta m', 'qt_a_m']), None)
+        if not qta_col: 
+            qta_col = next((c for c in colonne if 'qt' in str(c).lower()), None)
+
         tit_col = next((c for c in colonne if str(c).lower() in ['titolarità', 'titolarita', 'tit', 'status']), None)
         fascia_col = next((c for c in colonne if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
         rig_col = next((c for c in colonne if str(c).lower() in ['rigorista', 'rigoristi', 'rig']), None)
         note_col = next((c for c in colonne if str(c).lower() in ['note', 'caratteristiche', 'skill']), None)
-
         miei_nomi = {p['Nome']: p['Prezzo'] for p in st.session_state.rosa}
         venduti_dict = {v['Nome']: v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
