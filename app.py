@@ -127,10 +127,16 @@ div.stButton > button {
     text-align: center; white-space: nowrap; flex-shrink: 0;
 }
 
-/* Tag micro inferiori */
+//* Tag micro inferiori (Grigio chiaro con scritta nera ben visibile) */
 .tag-micro {
-    font-size: 8px; padding: 1px 3px; border-radius: 3px; background: #2b2c34;
-    color: #b0b0b0 !important; border: 1px solid #3d3e48; white-space: nowrap;
+    font-size: 8px !important; 
+    padding: 1px 4px !important; 
+    border-radius: 4px !important; 
+    background: #e2e8f0 !important; 
+    color: #1a202c !important; 
+    font-weight: 600 !important; 
+    border: 1px solid #cbd5e1 !important; 
+    white-space: nowrap !important;
 }
 .tag-mio-style { background: #0055ff !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-venduto-style { background: #c0392b !important; color: #ffffff !important; font-weight: bold; border: none !important; }
