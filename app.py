@@ -495,8 +495,12 @@ if df is not None:
                 if fascia_testo and fascia_testo not in ['-', '']: 
                     tags_list.append(f'<span class="tag-micro">{fascia_testo}</span>')
                 
-                if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']: 
-                    tags_list.append('<span class="tag-micro">⚽ Rig</span>')
+                # --- GESTIONE RIGORISTA AGGIORNATA PER LA "R" ---
+                if rig_col and pd.notna(row[rig_col]):
+                    val_rig = str(row[rig_col]).strip().upper()
+                    if val_rig in ['R', '⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
+                        tags_list.append('<span class="tag-micro">⚽ Rig</span>')
+                # -----------------------------------------------
                 
                 if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
                     for t in str(row[note_col]).split(','): 
