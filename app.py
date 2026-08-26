@@ -445,26 +445,54 @@ if df is not None:
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
 
             for _, row in df_pagina.iterrows():
-                g_nome = row[nome_col]
-                g_rm = str(row[rm_col]) if rm_col in row else "N/A"
-                g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
-                val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
-                val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
+                # 1. Gestione Titolarità (Stelle esatte o trattino)
+                if tit_col and pd.notna(row[tit_col]):
+                    try:
+                        tit_val = int(row[tit_col])
+                        tit_val = min(max(tit_val, 1), 5)
+                        stelle = "★" * tit_val + "☆" * (5 - tit_val)
+                    except ValueError:
+                        stelle = "-"
+                else:
+                    stelle = "-"
 
-                tit_val = int(row[tit_col]) if (tit_col and pd.notna(row[tit_col])) else 3
-                tit_val = min(max(tit_val, 1), 5)
-                stelle = "★" * tit_val + "☆" * (5 - tit_val)
+                # 2. Gestione Fasce (Mappatura personalizzata)
+                fascia_testo = ""
+                if fascia_col and pd.notna(row[fascia_col]):
+                    val_f = str(row[fascia_col]).strip().upper()
+                    mappa_fasce = {
+                        'T': 'Top',
+                        'ST': 'Semi-top',
+                        '3': 'Terza',
+                        '4': 'Quarta',
+                        'SC': 'Scommessa',
+                        'TIT': 'Tit scarsi',
+                        'OUT': 'Outsider'
+                    }
+                    fascia_testo = mappa_fasce.get(val_f, val_f) # Se trova la sigla la converte, altrimenti mostra il valore originale
 
+                # 3. Assemblaggio dei Tag
                 tags_list = []
-                if val_qta is not None: tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
-                if fascia_col and pd.notna(row[fascia_col]) and str(row[fascia_col]).strip() not in ['-', '']: tags_list.append(f'<span class="tag-micro">{str(row[fascia_col]).strip()}</span>')
-                if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']: tags_list.append('<span class="tag-micro">⚽ Rig</span>')
-                if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
-                    for t in str(row[note_col]).split(','): tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
-                if g_nome in set_occasioni and g_nome not in nomi_venduti_totali: tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
+                if val_qta is not None: 
+                    tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
                 
-                if g_nome in miei_nomi: tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
-                elif g_nome in venduti_dict: tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
+                if fascia_testo and fascia_testo not in ['-', '']: 
+                    tags_list.append(f'<span class="tag-micro">{fascia_testo}</span>')
+                
+                if rig_col and pd.notna(row[rig_col]) and str(row[rig_col]).strip().upper() in ['⚽', 'SI', '1', 'RIGORISTA', 'RIG']: 
+                    tags_list.append('<span class="tag-micro">⚽ Rig</span>')
+                
+                if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
+                    for t in str(row[note_col]).split(','): 
+                        tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
+                
+                if g_nome in set_occasioni and g_nome not in nomi_venduti_totali: 
+                    tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
+                
+                if g_nome in miei_nomi: 
+                    tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
+                elif g_nome in venduti_dict: 
+                    tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
 
                 tags_html = "".join(tags_list)
                 col_bg = get_ruolo_colore(g_rm)
@@ -483,7 +511,6 @@ if df is not None:
                     f'  </div>'
                     f'</div>'
                 )
-
                 c_card, c_btn = st.columns([1, 1], vertical_alignment="center")
                 with c_card:
                     st.markdown(card_html, unsafe_allow_html=True)
