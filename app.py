@@ -445,6 +445,12 @@ if df is not None:
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
 
             for _, row in df_pagina.iterrows():
+                g_nome = row[nome_col]
+                g_rm = str(row[rm_col]) if rm_col in row else "N/A"
+                g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
+                val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
+                val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
+
                 # 1. Gestione Titolarità (Stelle esatte o trattino)
                 if tit_col and pd.notna(row[tit_col]):
                     try:
@@ -469,7 +475,7 @@ if df is not None:
                         'TIT': 'Tit scarsi',
                         'OUT': 'Outsider'
                     }
-                    fascia_testo = mappa_fasce.get(val_f, val_f) # Se trova la sigla la converte, altrimenti mostra il valore originale
+                    fascia_testo = mappa_fasce.get(val_f, val_f)
 
                 # 3. Assemblaggio dei Tag
                 tags_list = []
