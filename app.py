@@ -127,16 +127,18 @@ div.stButton > button {
     text-align: center; white-space: nowrap; flex-shrink: 0;
 }
 
-//* Tag micro inferiori (Grigio chiaro con scritta nera ben visibile) */
+/* Tag micro inferiori (Grigio chiaro / Sfondo pulito con scritta nera) - VERIFICATO E CORRETTO */
 .tag-micro {
     font-size: 8px !important; 
     padding: 1px 4px !important; 
     border-radius: 4px !important; 
-    background: #e2e8f0 !important; 
-    color: #1a202c !important; 
-    font-weight: 600 !important; 
+    background-color: #e2e8f0 !important;   /* Grigio chiaro */
+    color: #1a202c !important;        /* Scritta Nera */
+    font-weight: 700 !important;      /* Grassetto */
     border: 1px solid #cbd5e1 !important; 
     white-space: nowrap !important;
+    margin-right: 2px !important; 
+    margin-bottom: 2px !important;
 }
 .tag-mio-style { background: #0055ff !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-venduto-style { background: #c0392b !important; color: #ffffff !important; font-weight: bold; border: none !important; }
