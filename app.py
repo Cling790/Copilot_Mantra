@@ -458,13 +458,16 @@ if df is not None:
                 val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
                 val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
 
-                # 1. Gestione Titolarità (Stelle esatte o trattino)
+             
+                # 1. Gestione Titolarità (Robusta per qualsiasi formato numerico/stringa)
+                stelle = "-"
                 if tit_col and pd.notna(row[tit_col]):
                     try:
-                        tit_val = int(row[tit_col])
-                        tit_val = min(max(tit_val, 1), 5)
-                        stelle = "★" * tit_val + "☆" * (5 - tit_val)
-                    except ValueError:
+                        # Converte prima in float e poi in int per gestire correttamente "2", 2.0, ecc.
+                        tit_val = int(float(row[tit_col]))
+                        if 1 <= tit_val <= 5:
+                            stelle = "★" * tit_val + "☆" * (5 - tit_val)
+                    except (ValueError, TypeError):
                         stelle = "-"
                 else:
                     stelle = "-"
