@@ -239,20 +239,15 @@ def get_ruolo_colore(rm_str):
     rm_str = str(rm_str).upper()
     tokens = re.findall(r'\b[A-Z]+\b', rm_str)
     if not tokens:
-        return '#7f8c8d'  # Grigio di default
+        return '#7f8c8d'  
     
     primo_ruolo = tokens[0]
-    
-    # 1. Portieri -> Giallo/Arancione
     if primo_ruolo == 'POR':
         return '#f39c12'
-    # 2. Difensori -> Verde
     elif primo_ruolo in ['DD', 'DS', 'DC', 'B']:
         return '#27ae60'
-    # 3. Centrocampisti -> Azzurro
     elif primo_ruolo in ['C', 'M', 'E']:
         return '#2980b9'
-    # 4. Trequartisti e Attaccanti -> Rosso
     elif primo_ruolo in ['T', 'W', 'A', 'PC']:
         return '#e74c3c'
     
@@ -267,46 +262,28 @@ def get_reparto(rm_str):
         if primo_ruolo in ruoli: return reparto
     return 'Altri'
 
-def leggi_file_intelligente(sorgente):
-    is_xlsx = getattr(sorgente, "name", str(sorgente)).lower().endswith('.xlsx')
-    for h in [1, 0, 2]:
-        try:
-            df_temp = pd.read_excel(sorgente, header=h) if is_xlsx else pd.read_csv(sorgente, header=h)
-            cols = [str(c).lower().strip() for c in df_temp.columns]
-            if any(k in cols for k in ['nome', 'calciatore', 'rm', 'r']): return df_temp
-        except Exception: continue
-    return None
-
-def unisci_dati(df_main, df_sec):
-    if df_main is None or df_sec is None: return df_main
+def carica_dati_unico(sorgente=None):
+    file_path = sorgente
+    if not file_path:
+        for nome in ["Quotazioni_Fantacalcio_Stagione_2026_27.xlsx", "Listone.xlsx", "Quotazioni.xlsx"]:
+            if os.path.exists(nome):
+                file_path = nome
+                break
+    if not file_path:
+        return None
+        
+    is_xlsx = getattr(file_path, "name", str(file_path)).lower().endswith('.xlsx')
     try:
-        col_nome_main = next((c for c in df_main.columns if str(c).lower().strip() in ['nome', 'calciatore']), None)
-        col_nome_sec = next((c for c in df_sec.columns if str(c).lower().strip() in ['nome', 'calciatore']), None)
-        if col_nome_main and col_nome_sec:
-            df_main['_key_nome'] = df_main[col_nome_main].astype(str).str.lower().str.strip()
-            df_sec['_key_nome'] = df_sec[col_nome_sec].astype(str).str.lower().str.strip()
-            colonne_utili = [c for c in df_sec.columns if c not in df_main.columns or c == '_key_nome']
-            df_sec_clean = df_sec[colonne_utili].drop_duplicates(subset=['_key_nome'])
-            df_merged = pd.merge(df_main, df_sec_clean, on='_key_nome', how='left', suffixes=('', '_sec'))
-            df_merged.drop(columns=['_key_nome'], inplace=True, errors='ignore')
-            return df_merged
-    except Exception: pass
-    return df_main
-
-def carica_dati_completi(file_main_user=None, file_sec_user=None):
-    df_main = leggi_file_intelligente(file_main_user) if file_main_user else None
-    if not df_main:
-        for nome in ["Quotazioni_Fantacalcio_Stagione_2026_27.xlsx", "Quotazioni_Fantacalcio_Stagione_2026_27.csv", "Listone.xlsx", "Quotazioni.xlsx"]:
-            if os.path.exists(nome):
-                df_main = leggi_file_intelligente(nome)
-                if df_main is not None: break
-    df_sec = leggi_file_intelligente(file_sec_user) if file_sec_user else None
-    if not df_sec:
-        for nome in ["FASCE_TIT_RIG.xlsx", "FASCE_TIT_RIG.csv", "Fasce.xlsx"]:
-            if os.path.exists(nome):
-                df_sec = leggi_file_intelligente(nome)
-                if df_sec is not None: break
-    return unisci_dati(df_main, df_sec) if df_sec is not None else df_main
+        if is_xlsx:
+            df = pd.read_excel(file_path, sheet_name="Tutti", header=0)
+        else:
+            df = pd.read_csv(file_path, header=0)
+        return df
+    except Exception:
+        try:
+            return pd.read_excel(file_path, header=0) if is_xlsx else pd.read_csv(file_path, header=0)
+        except Exception:
+            return None
 
 SLOT_TOTALI = 32
 MAX_TRQ_ATT_COMBINATI = 10
@@ -318,7 +295,6 @@ coeff_inflazione = (tot_spesa_uscite / tot_fvm_uscite) if tot_fvm_uscite > 0 els
 def calcola_occasioni(df_completo, tutti_venduti):
     nomi_venduti = set(v['Nome'] for v in tutti_venduti)
     fvm_col = next((c for c in df_completo.columns if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm']), None)
-    # MODIFICA: Filtra i giocatori top con FVM >= 20
     df_top = df_completo[pd.to_numeric(df_completo[fvm_col], errors='coerce') >= 20].copy() if fvm_col else df_completo.copy()
     occasioni_set = set()
     rm_col = next((c for c in df_completo.columns if str(c).upper() == 'RM'), 'RM')
@@ -350,8 +326,7 @@ st.sidebar.metric(label="Rilancio MAX Assoluto", value=f"{rilancio_massimo} cr")
 
 st.sidebar.divider()
 st.sidebar.subheader("📁 File caricati")
-file_caricato_m = st.sidebar.file_uploader("Sostituisci Quotazioni", type=["xlsx", "csv"], key="u_main")
-file_caricato_s = st.sidebar.file_uploader("Sostituisci Fasce/Tit/Rig", type=["xlsx", "csv"], key="u_sec")
+file_caricato_unico = st.sidebar.file_uploader("Carica Listone Unico (con Titolarità/Fasce/Rig)", type=["xlsx", "csv"], key="u_unico")
 
 st.sidebar.divider()
 if st.sidebar.button("🗑️ Reset Totale Asta", type="secondary", use_container_width=True, key="btn_reset_asta"):
@@ -359,6 +334,7 @@ if st.sidebar.button("🗑️ Reset Totale Asta", type="secondary", use_containe
     st.session_state.tutti_venduti = []
     salva_backup()
     st.rerun()
+
 # ==========================================
 # 📑 GESTIONE DELLE TABS (4 TABS)
 # ==========================================
@@ -366,7 +342,7 @@ tab_asta, tab_rosa, tab_venduti, tab_moduli = st.tabs([
     "🔍 Listone & Asta", "📋 La Mia Rosa", "🤝 Tutti i Venduti", "🧩 Analizzatore Moduli"
 ])
 
-df = carica_dati_completi(file_caricato_m, file_caricato_s)
+df = carica_dati_unico(file_caricato_unico)
 
 if df is not None:
     try:
@@ -427,10 +403,8 @@ if df is not None:
             def reset_ruolo_callback():
                 st.session_state["filtro_ruolo_specifico"] = "Tutti"
 
-            # 1. CAMPO CERCA NOME
             cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro, Dybala...")
 
-            # 2. REPARTO E RUOLO CON OPZIONI SEPARATE
             col_f1, col_f2 = st.columns(2)
             with col_f1: 
                 macro_reparto = st.selectbox(
@@ -443,7 +417,6 @@ if df is not None:
                 opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
                 ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
 
-            # 3. CHECKBOX CON CONTATORE DINAMICO
             col_cb1, col_cb2 = st.columns(2)
             with col_cb1: 
                 mostra_anche_venduti = st.checkbox("👁️ Mostra anche Venduti", value=False)
@@ -453,7 +426,6 @@ if df is not None:
 
             st.divider()
 
-            # APPLICAZIONE FILTRI
             df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
             if solo_occasioni: df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
             if macro_reparto != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
