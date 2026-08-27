@@ -550,6 +550,30 @@ if df is not None:
 
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
         
+        # --- RECUPERO DATI ACQUISTI ---
+        miei_list = st.session_state.get('miei_acquisti', [])
+        altri_list = st.session_state.get('altri_acquisti', [])
+        
+        miei_nomi = {a['nome']: a['prezzo'] for a in miei_list if isinstance(a, dict) and 'nome' in a}
+        venduti_dict = {a['nome']: a['prezzo'] for a in altri_list if isinstance(a, dict) and 'nome' in a}
+        nomi_venduti_totali = set(miei_nomi.keys()).union(set(venduti_dict.keys()))
+        
+        # --- CALCOLO SATURAZIONE MERCATO AVVERSARI ---
+        # Slot totali degli avversari (9 squadre)
+        slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'A': 90}
+        acq_avv = {'P': 0, 'D': 0, 'C': 0, 'A': 0}
+        
+        # Contiamo quanti ne hanno già presi per ogni reparto
+        for nome_v in venduti_dict.keys():
+            riga_v = df[df[nome_col] == nome_v]
+            if not riga_v.empty:
+                ruoli_v = str(riga_v.iloc[0][rm_col]).upper()
+                if 'POR' in ruoli_v or ruoli_v == 'P': acq_avv['P'] += 1
+                elif any(r in ruoli_v for r in ['DC', 'DD', 'DS', 'E', 'D']): acq_avv['D'] += 1
+                elif any(r in ruoli_v for r in ['M', 'C']): acq_avv['C'] += 1
+                elif any(r in ruoli_v for r in ['W', 'T', 'A', 'PC']): acq_avv['A'] += 1
+        # ---------------------------------------------
+        
         for _, row in df_pagina.iterrows():
             g_nome = row[nome_col]
             g_rm = str(row[rm_col]) if rm_col in row else "N/A"
@@ -614,9 +638,29 @@ if df is not None:
                 for t in str(row[note_col]).split(','): 
                     tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
             
-            # 4. TAG AFFARE
-            if g_nome in set_occasioni and g_nome not in nomi_venduti_totali: 
-                tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
+           # 4. TAG AFFARE INTELLIGENTE (Basato sulla saturazione del mercato)
+            if g_nome not in nomi_venduti_totali:
+                # Capiamo il reparto del giocatore che stiamo valutando
+                ruoli_g = str(g_rm).upper()
+                rep_g = None
+                if 'POR' in ruoli_g or ruoli_g == 'P': rep_g = 'P'
+                elif any(r in ruoli_g for r in ['DC', 'DD', 'DS', 'E', 'D']): rep_g = 'D'
+                elif any(r in ruoli_g for r in ['M', 'C']): rep_g = 'C'
+                elif any(r in ruoli_g for r in ['W', 'T', 'A', 'PC']): rep_g = 'A'
+
+                if rep_g:
+                    # Calcolo percentuale slot riempiti dagli avversari (es. 0.75 = 75%)
+                    saturazione = acq_avv[rep_g] / slot_avversari[rep_g]
+                    
+                    # Evitiamo di segnalare i Top (li conoscono tutti) e giocatori inutili (FVM troppo basso)
+                    fascia_val = str(row[fascia_c]).strip().lower() if (fascia_c and pd.notna(row[fascia_c])) else ""
+                    is_no_hype = fascia_val not in ['t', 'top', '1']
+                    fvm_valido = fvm_base_num >= 3  # Ignora chi vale 1 o 2 crediti di base, non sono veri affari
+                    
+                    # Se gli avversari hanno riempito il 70% o più del reparto e il giocatore è "nascosto" ma valido
+                    if saturazione >= 0.70 and is_no_hype and fvm_valido:
+                        perc_sat = int(saturazione * 100)
+                        tags_list.append(f'<span class="tag-micro tag-affare-style" title="Ruolo saturo al {perc_sat}%">🔥 VERO AFFARE</span>')
 
             # 5. TAG TARGET / INTERESSE
             is_interesse = False
