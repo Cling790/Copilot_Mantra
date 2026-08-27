@@ -551,51 +551,52 @@ if df is not None:
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
         
         # --- RECUPERO DATI ACQUISTI (Robusto) ---
-        miei_list = st.session_state.get('miei_acquisti', [])
-        altri_list = st.session_state.get('altri_acquisti', [])
-        
-        miei_nomi = {str(a['nome']).strip().lower(): a['prezzo'] for a in miei_list if isinstance(a, dict) and 'nome' in a}
-        venduti_dict = {str(a['nome']).strip().lower(): a['prezzo'] for a in altri_list if isinstance(a, dict) and 'nome' in a}
-        nomi_venduti_totali = set(miei_nomi.keys()).union(set(venduti_dict.keys()))
-        
-        # --- CALCOLO SATURAZIONE MERCATO AVVERSARI (Robusto) ---
-        slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'A': 90}
-        acq_avv = {'P': 0, 'D': 0, 'C': 0, 'A': 0}
-        
-        for nome_v_lower in venduti_dict.keys():
-            riga_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_lower]
-            if not riga_v.empty:
-                ruoli_v = str(riga_v.iloc[0][rm_col]).upper()
-                if 'POR' in ruoli_v or ruoli_v == 'P': acq_avv['P'] += 1
-                elif any(r in ruoli_v for r in ['DC', 'DD', 'DS', 'E', 'D']): acq_avv['D'] += 1
-                elif any(r in ruoli_v for r in ['M', 'C']): acq_avv['C'] += 1
-                elif any(r in ruoli_v for r in ['W', 'T', 'A', 'PC']): acq_avv['A'] += 1
-        # -----------------------------------------------------
+        # --- CALCOLO GLOBALE AFFARI (In cima al codice, dopo il caricamento di df) ---
+miei_list_glob = st.session_state.get('miei_acquisti', [])
+altri_list_glob = st.session_state.get('altri_acquisti', [])
 
-        # Troviamo la colonna della titolarità in anticipo per il calcolo degli affari
-        tit_col_name = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita']), None)
+miei_nomi_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in miei_list_glob if isinstance(a, dict) and 'nome' in a}
+venduti_dict_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in altri_list_glob if isinstance(a, dict) and 'nome' in a}
+nomi_venduti_totali_glob = set(miei_nomi_glob.keys()).union(set(venduti_dict_glob.keys()))
 
-        # --- CREAZIONE DINAMICA DEL SET_OCCASIONI (Per filtro e contatore) ---
-        set_occasioni = set()
-        for _, row_f in df.iterrows():
-            g_n = row_f[nome_col]
-            if str(g_n).strip().lower() not in nomi_venduti_totali:
-                r_rm = str(row_f[rm_col]).upper() if rm_col in df.columns else ""
-                r_rep = 'P' if ('POR' in r_rm or r_rm == 'P') else ('D' if any(r in r_rm for r in ['DC', 'DD', 'DS', 'E', 'D']) else ('C' if any(r in r_rm for r in ['M', 'C']) else 'A'))
-                
-                sat = acq_avv[r_rep] / slot_avversari[r_rep]
-                
-                # Calcolo stelle per ogni riga
-                n_st = 0
-                if tit_col_name and pd.notna(row_f[tit_col_name]):
-                    v_t = str(row_f[tit_col_name]).strip()
-                    try:
-                        n_st = int(float(v_t.replace(',', '.')))
-                    except ValueError:
-                        n_st = 0
-                
-                if sat >= 0.40 and n_st >= 4:
-                    set_occasioni.add(g_n)
+slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'A': 90}
+acq_avv_glob = {'P': 0, 'D': 0, 'C': 0, 'A': 0}
+
+for nome_v_l in venduti_dict_glob.keys():
+    r_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_l]
+    if not r_v.empty:
+        r_v_ruolo = str(r_v.iloc[0][rm_col]).upper()
+        if 'POR' in r_v_ruolo or r_v_ruolo == 'P': acq_avv_glob['P'] += 1
+        elif any(r in r_v_ruolo for r in ['DC', 'DD', 'DS', 'E', 'D']): acq_avv_glob['D'] += 1
+        elif any(r in r_v_ruolo for r in ['M', 'C']): acq_avv_glob['C'] += 1
+        elif any(r in r_v_ruolo for r in ['W', 'T', 'A', 'PC']): acq_avv_glob['A'] += 1
+
+tit_col_glob = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita']), None)
+
+set_occasioni = set()
+for _, r_f in df.iterrows():
+    g_n = r_f[nome_col]
+    if str(g_n).strip().lower() not in nomi_venduti_totali_glob:
+        r_rm = str(r_f[rm_col]).upper() if rm_col in df.columns else ""
+        r_rep = 'P' if ('POR' in r_rm or r_rm == 'P') else ('D' if any(r in r_rm for r in ['DC', 'DD', 'DS', 'E', 'D']) else ('C' if any(r in r_rm for r in ['M', 'C']) else 'A'))
+        
+        sat_glob = acq_avv_glob[r_rep] / slot_avversari[r_rep]
+        
+        # Conteggio stelle robusto (legge sia le emoji ⭐ che i numeri)
+        n_st_glob = 0
+        if tit_col_glob and pd.notna(r_f[tit_col_glob]):
+            v_t_glob = str(r_f[tit_col_glob]).strip()
+            if '⭐' in v_t_glob:
+                n_st_glob = v_t_glob.count('⭐')
+            else:
+                try:
+                    n_st_glob = int(float(v_t_glob.replace(',', '.')))
+                except ValueError:
+                    n_st_glob = 0
+        
+        if sat_glob >= 0.40 and n_st_glob >= 4:
+            set_occasioni.add(g_n)
+# --------------------------------------------------------------------------------
         # -------------------------------------------------------------------
         # -------------------------------------------------------------------
         # -----------------------------------------------------
