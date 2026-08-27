@@ -382,6 +382,7 @@ if df is not None:
         venduti_dict = {v['Nome']: v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
         c_infl = coeff_inflazione
+        interesse_col = next((c for c in colonne if str(c).lower() in ['interesse', 'preferito', 'watchlist', 'pref']), None)
 
         # ==========================================
         # 💬 POPUP DIALOG NATIVO (GESTIONE CHIAMATA)
