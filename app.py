@@ -534,12 +534,70 @@ if df is not None:
             df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
 
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
+            
             for _, row in df_pagina.iterrows():
                 g_nome = row[nome_col]
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
                 g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
-                val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
+                
+                # --- GESTIONE FVM ORIGINARIO E INFLAZIONE ---
+                fvm_base_num = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
+                val_fvm = int(round(fvm_base_num * c_infl)) # c_infl è il coefficiente d'inflazione attivo nell'app
+                
+                if abs(c_infl - 1.0) > 0.001:
+                    fvm_display_html = f'<div class="fvm-badge-right" title="FVM Originario: {fvm_base_num} cr">{val_fvm} cr <span style="font-size: 10px; opacity: 0.8; text-decoration: line-through;">({fvm_base_num})</span></div>'
+                else:
+                    fvm_display_html = f'<div class="fvm-badge-right">{val_fvm} cr</div>'
+                # -------------------------------------------
+
                 val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
+                stelle = get_stelle_titolarita(row)
+
+                tags_list = []
+                if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
+                    for t in str(row[note_col]).split(','): 
+                        tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
+                
+                if g_nome in set_occasioni and g_nome not in nomi_venduti_totali: 
+                    tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
+
+                is_interesse = False
+                if interesse_col and pd.notna(row[interesse_col]):
+                    val_int = str(row[interesse_col]).strip().upper()
+                    if val_int in ['X', 'SI', 'SÌ', '1', 'TRUE', 'YES']:
+                        is_interesse = True
+
+                if is_interesse:
+                    tags_list.insert(0, '<span class="tag-micro tag-interesse-style">🎯 TARGET</span>')
+                
+                if g_nome in miei_nomi: 
+                    tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
+                elif g_nome in venduti_dict: 
+                    tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
+
+                tags_html = "".join(tags_list)
+                col_bg = get_ruolo_colore(g_rm)
+
+                card_html = (
+                    f'<div class="player-main-card">'
+                    f'  <div style="display: flex; align-items: center; gap: 4px; width: 100%;">'
+                    f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm}</div>'
+                    f'    <span class="player-name-text">{g_nome}</span>'
+                    f'    <span class="team-badge">{g_squadra}</span>'
+                    f'    <span class="stars-text">{stelle}</span>'
+                    f'    {fvm_display_html}'
+                    f'  </div>'
+                    f'  <div style="display: flex; align-items: center; gap: 3px; flex-wrap: wrap;">'
+                    f'    {tags_html}'
+                    f'  </div>'
+                    f'</div>'
+                )
+                c_card, c_btn = st.columns([1, 1], vertical_alignment="center")
+                with c_card:
+                    st.markdown(card_html, unsafe_allow_html=True)
+                with c_btn:
+                    if st.button("⚡", key=f"btn_chiama_{g_nome}", use_container_width=True, help="Gestisci Giocatore"):
+                        mostra_modal_chiamata(row.to_dict())
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
