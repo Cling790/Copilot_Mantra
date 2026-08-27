@@ -523,6 +523,16 @@ if df is not None:
                 
                 if g_nome in set_occasioni and g_nome not in nomi_venduti_totali: 
                     tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
+
+                # Gestione Obiettivo / Interesse (Target) con bersaglio
+                is_interesse = False
+                if interesse_col and pd.notna(row[interesse_col]):
+                    val_int = str(row[interesse_col]).strip().upper()
+                    if val_int in ['X', 'SI', 'SÌ', '1', 'TRUE', 'YES']:
+                        is_interesse = True
+
+                if is_interesse:
+                    tags_list.insert(0, '<span class="tag-micro tag-interesse-style">🎯 TARGET</span>')
                 
                 if g_nome in miei_nomi: 
                     tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
