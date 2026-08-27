@@ -143,7 +143,13 @@ div.stButton > button {
 .tag-mio-style { background: #0055ff !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-venduto-style { background: #c0392b !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-affare-style { background: #d35400 !important; color: #ffffff !important; font-weight: bold; border: none !important; }
-
+/* Stile per il tag dei giocatori d'interesse (Target) */
+.tag-interesse-style { 
+    background: #ea580c !important; /* Arancione deciso */ 
+    color: #ffffff !important;      /* Scritta bianca in evidenza */ 
+    font-weight: 800 !important; 
+    border: 1px solid #c2410c !important; 
+}
 /* STILE TAB */
 .stTabs [data-baseweb="tab-list"] { gap: 4px !important; background-color: #1e1f26 !important; padding: 4px !important; border-radius: 8px !important; }
 .stTabs [data-baseweb="tab"] { background-color: #2e3039 !important; color: #b0b0b0 !important; border-radius: 6px !important; padding: 4px 8px !important; font-size: 11px !important; border: none !important; }
