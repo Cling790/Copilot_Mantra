@@ -127,14 +127,14 @@ div.stButton > button {
     text-align: center; white-space: nowrap; flex-shrink: 0;
 }
 
-/* Tag micro inferiori (Grigio chiaro / Sfondo pulito con scritta nera) - VERIFICATO E CORRETTO */
+/* Tag micro inferiori */
 .tag-micro {
     font-size: 8px !important; 
     padding: 1px 4px !important; 
     border-radius: 4px !important; 
-    background-color: #e2e8f0 !important;   /* Grigio chiaro */
-    color: #1a202c !important;        /* Scritta Nera */
-    font-weight: 700 !important;      /* Grassetto */
+    background-color: #e2e8f0 !important;   
+    color: #1a202c !important;         
+    font-weight: 700 !important;      
     border: 1px solid #cbd5e1 !important; 
     white-space: nowrap !important;
     margin-right: 2px !important; 
@@ -143,10 +143,9 @@ div.stButton > button {
 .tag-mio-style { background: #0055ff !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-venduto-style { background: #c0392b !important; color: #ffffff !important; font-weight: bold; border: none !important; }
 .tag-affare-style { background: #d35400 !important; color: #ffffff !important; font-weight: bold; border: none !important; }
-/* Stile per il tag dei giocatori d'interesse (Target) */
 .tag-interesse-style { 
-    background: #ea580c !important; /* Arancione deciso */ 
-    color: #ffffff !important;      /* Scritta bianca in evidenza */ 
+    background: #ea580c !important; 
+    color: #ffffff !important;      
     font-weight: 800 !important; 
     border: 1px solid #c2410c !important; 
 }
@@ -306,67 +305,78 @@ tot_fvm_uscite = sum(v['FVM'] for v in st.session_state.tutti_venduti if v.get('
 tot_spesa_uscite = sum(v['Prezzo'] for v in st.session_state.tutti_venduti)
 coeff_inflazione = (tot_spesa_uscite / tot_fvm_uscite) if tot_fvm_uscite > 0 else 1.0
 
-def calcola_occasioni(df_completo, tutti_venduti):
-    nomi_venduti = set(v['Nome'] for v in tutti_venduti)
+# ==========================================
+# 🛠️ FUNZIONE DI SUPPORTO PER IL REPARTO
+# ==========================================
+def ottieni_reparto_principale(ruolo_str):
+    if not ruolo_str:
+        return None
+    tokens = [r.strip().upper() for r in str(ruolo_str).replace(';', ',').replace('/', ',').split(',')]
+    if not tokens:
+        return None
     
-    fvm_col = next((c for c in df_completo.columns if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm']), None)
-    fascia_col = next((c for c in df_completo.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
-    tit_col = next((c for c in df_completo.columns if str(c).lower() in ['titolarità', 'titolarita', 'tit', 'status']), None)
-    rm_col = next((c for c in df_completo.columns if str(c).upper() == 'RM'), 'RM')
-    
-    occasioni_set = set()
-    
-    # Funzione di supporto per estrarre la "categoria" (Fascia o Stelle) del giocatore
-    def get_categoria_strategica(row):
-        # 1. Controlliamo se ha una fascia scritta (es. Top, Semi-top, Titolare, ecc.)
-        if fascia_col and pd.notna(row[fascia_col]):
-            f_txt = str(row[fascia_col]).strip()
-            if f_txt and f_txt not in ['-', '']:
-                return f_txt.lower() # Es. 'top', 'semi-top', ecc.
-        
-        # 2. Se non ha una fascia testuale, usiamo le stelle di titolarità come categoria (es. '4 stelle', '5 stelle')
-        if tit_col and pd.notna(row[tit_col]):
-            val_tit = str(row[tit_col]).strip()
-            num_stelle = val_tit.count('⭐')
-            if num_stelle >= 4:
-                return f'{num_stelle}_stelle'
-            else:
-                try:
-                    num_val = float(val_tit.replace(',', '.'))
-                    if num_val >= 4:
-                        return f'{int(num_val)}_stelle'
-                except ValueError:
-                    pass
-                    
-        return None # Giocatori di fascia bassa o meno importanti che non attivano gli affari di fascia
+    primo = tokens[0]
+    if primo in ['P', 'POR']:
+        return 'P'
+    elif primo in ['DC', 'DD', 'DS', 'B', 'D']:
+        return 'D'  # Difensori
+    elif primo in ['C', 'M', 'E']:
+        return 'C'  # Centrocampisti
+    elif primo in ['T', 'W', 'A', 'PC']:
+        return 'TA' # Trequartisti + Attaccanti
+    return None
 
-    # Aggiungiamo temporaneamente la colonna della categoria al dataframe di lavoro
-    df_lavoro = df_completo.copy()
-    df_lavoro['categoria_affare'] = df_lavoro.apply(get_categoria_strategica, axis=1)
-    
-    # Scorriamo ogni ruolo Mantra (es. Por, Dc, Dd, Ds, E, C, W, T, A, Pc)
-    for ruolo in LISTA_RUOLI_MANTRA[1:]:
-        df_ruolo = df_lavoro[df_lavoro[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo) + r'\b', case=False, na=False)]
-        
-        # Isoliamo solo i giocatori che appartengono a una fascia/categoria strategica valida
-        df_strategici = df_ruolo[df_ruolo['categoria_affare'].notna()]
-        
-        # Analizziamo il consumo del 60% DIVISO PER SINGOLA FASCIA all'interno del ruolo
-        for categoria, df_fascia in df_strategici.groupby('categoria_affare'):
-            # Vogliamo che ci sia un numero minimo di giocatori in quella fascia (es. almeno 2 o 3) per far scattare la percentuale
-            if len(df_fascia) >= 2:
-                venduti_in_fascia = df_fascia[df_fascia['Nome'].isin(nomi_venduti)]
+# ==========================================
+# 🔥 CALCOLO OCCASIONI (Logica Globale Reparto >= 40% e Stelle >= 4)
+# ==========================================
+def calcola_occasioni(df_completo, tutti_venduti):
+    miei_nomi_glob = {str(p['Nome']).strip().lower(): p['Prezzo'] for p in st.session_state.rosa}
+    venduti_dict_glob = {str(v['Nome']).strip().lower(): v['Prezzo'] for v in tutti_venduti if not v.get('Mio', False)}
+    nomi_venduti_totali_glob = set(miei_nomi_glob.keys()).union(set(venduti_dict_glob.keys()))
+
+    slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'TA': 90}
+    acq_avv = {'P': 0, 'D': 0, 'C': 0, 'TA': 0}
+
+    rm_col_c = next((c for c in df_completo.columns if str(c).upper() == 'RM'), 'RM')
+    nome_col_c = next((c for c in df_completo.columns if str(c).lower() in ['nome', 'calciatore']), 'Nome')
+
+    for nome_v_l in venduti_dict_glob.keys():
+        r_v = df_completo[df_completo[nome_col_c].astype(str).str.strip().str.lower() == nome_v_l]
+        if not r_v.empty:
+            r_v_ruolo_str = str(r_v.iloc[0][rm_col_c])
+            rep_v = ottieni_reparto_principale(r_v_ruolo_str)
+            if rep_v in acq_avv:
+                acq_avv[rep_v] += 1
+
+    tit_col_glob = next((c for c in df_completo.columns if str(c).strip().lower() in ['titolarità', 'titolarita', 'stelle']), None)
+
+    set_occasioni = set()
+    for _, r_f in df_completo.iterrows():
+        g_n = r_f[nome_col_c]
+        g_n_lower = str(g_n).strip().lower()
+        if g_n_lower not in nomi_venduti_totali_glob:
+            r_rm_str = str(r_f[rm_col_c]) if rm_col_c in df_completo.columns else ""
+            r_rep = ottieni_reparto_principale(r_rm_str)
+            
+            if r_rep and r_rep in slot_avversari:
+                sat_glob = acq_avv[r_rep] / slot_avversari[r_rep]
                 
-                # Se il 60% (o più) di QUELLA SPECIFICA FASCIA è stato venduto...
-                if (len(venduti_in_fascia) / len(df_fascia)) >= 0.60:
-                    # ...allora tutti i superstiti di quella fascia diventano un AFFARE 🔥
-                    rimasti_in_fascia = df_fascia[~df_fascia['Nome'].isin(nomi_venduti)]
-                    for n in rimasti_in_fascia['Nome']:
-                        occasioni_set.add(n)
-                        
-    return occasioni_set
-    
-# --- HEADER & SIDEBAR ---
+                n_st_glob = 0
+                if tit_col_glob and pd.notna(r_f[tit_col_glob]):
+                    try:
+                        n_st_glob = int(float(str(r_f[tit_col_glob]).replace(',', '.')))
+                    except (ValueError, TypeError):
+                        n_st_glob = 0
+                
+                # Condizione: Reparto >= 40% E Stelle >= 4
+                if sat_glob >= 0.40 and n_st_glob >= 4:
+                    set_occasioni.add(g_n_lower)
+                    
+    return set_occasioni
+
+# ==========================================
+# 🖥️ HEADER & SIDEBAR
+# ==========================================
 col_head1, col_head2 = st.columns([4, 1])
 with col_head1: st.title("⚽ Fanta Copilot - Dashboard Mantra")
 with col_head2:
@@ -412,7 +422,6 @@ if df is not None:
         rm_col = next((c for c in colonne if str(c).upper() == 'RM'), 'RM')
         squadra_col = next((c for c in colonne if str(c).lower() in ['squadra', 'club']), 'Squadra')
         
-        # Forziamo la lettura dei valori specifici Mantra
         fvm_col = next((c for c in colonne if str(c).strip().lower() == 'fvm m'), None)
         if not fvm_col: 
             fvm_col = next((c for c in colonne if 'fvm' in str(c).lower()), None)
@@ -462,7 +471,7 @@ if df is not None:
                 if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
                     st.rerun()
 
-       # ------------------------------------------
+        # ------------------------------------------
         # 🔍 TAB 1: LISTONE & ASTA
         # ------------------------------------------
         with tab_asta:
@@ -474,13 +483,12 @@ if df is not None:
 
             cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro, Dybala...")
 
-           # --- FILTRO PER FASCIA ---
+            # --- FILTRO PER FASCIA ---
             fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
             scelta_fascia = "Tutte le fasce"
             if fascia_col_filtro:
                 fasce_disponibili = sorted([str(x).strip() for x in df[fascia_col_filtro].dropna().unique() if str(x).strip() not in ['', '-']])
                 if fasce_disponibili:
-                    # Mappatura per mostrare i nomi estesi nel menu del filtro
                     mappa_fasce = {
                         't': 'Top',
                         'st': 'Semi-top',
@@ -496,7 +504,6 @@ if df is not None:
                         format_func=lambda x: mappa_fasce.get(str(x).lower(), x),
                         key="filtro_fascia_selectbox"
                     )
-            # -------------------------
 
             col_f1, col_f2 = st.columns(2)
             with col_f1: 
@@ -515,16 +522,15 @@ if df is not None:
                 mostra_anche_venduti = st.checkbox("👁️ Mostra anche Venduti", value=False)
             with col_cb2: 
                 label_checkbox = f"🔥 Solo Affari / Occasioni ({num_occasioni})" if num_occasioni > 0 else "🔥 Solo Affari / Occasioni"
-                solo_occasioni = st.checkbox(label_checkbox, value=False)
+                solo_occasioni = st.checkbox(label_checkbox, value=False, key="solo_affari")
 
             st.divider()
 
             df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
             
             if solo_occasioni: 
-                df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
+                df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.strip().str.lower().isin(set_occasioni)]
             
-            # Applicazione del filtro fascia al dataframe
             if scelta_fascia != "Tutte le fasce" and fascia_col_filtro:
                 df_filtrato = df_filtrato[df_filtrato[fascia_col_filtro].astype(str).str.strip().str.lower() == scelta_fascia.lower()]
             
@@ -549,33 +555,10 @@ if df is not None:
         df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
         st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
 
-        # --- FUNZIONE DI SUPPORTO PER IL REPARTO ---
-        def ottieni_reparto_principale(ruolo_str):
-            if not ruolo_str:
-                return None
-            tokens = [r.strip().upper() for r in str(ruolo_str).replace(';', ',').replace('/', ',').split(',')]
-            if not tokens:
-                return None
-            
-            primo = tokens[0]
-            if primo in ['P', 'POR']:
-                return 'P'
-            elif primo in ['DC', 'DD', 'DS', 'B', 'D']:
-                return 'D'  # Difensori
-            elif primo in ['C', 'M', 'E']:
-                return 'C'  # Centrocampisti
-            elif primo in ['T', 'W', 'A', 'PC']:
-                return 'TA' # Trequartisti + Attaccanti
-            return None
-
-        # --- CALCOLO GLOBALE AFFARI UNIFICATO ---
-        miei_nomi_glob = {str(p['Nome']).strip().lower(): p['Prezzo'] for p in st.session_state.rosa}
-        venduti_dict_glob = {str(v['Nome']).strip().lower(): v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
-        nomi_venduti_totali_glob = set(miei_nomi_glob.keys()).union(set(venduti_dict_glob.keys()))
-
+        # Statistiche di reparto correnti per i tooltip dei tag
         slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'TA': 90}
         acq_avv = {'P': 0, 'D': 0, 'C': 0, 'TA': 0}
-
+        venduti_dict_glob = {str(v['Nome']).strip().lower(): v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
         for nome_v_l in venduti_dict_glob.keys():
             r_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_l]
             if not r_v.empty:
@@ -584,37 +567,11 @@ if df is not None:
                 if rep_v in acq_avv:
                     acq_avv[rep_v] += 1
 
-        tit_col_glob = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita', 'stelle']), None)
-
-        set_occasioni = set()
-        for _, r_f in df.iterrows():
-            g_n = r_f[nome_col]
-            g_n_lower = str(g_n).strip().lower()
-            if g_n_lower not in nomi_venduti_totali_glob:
-                r_rm_str = str(r_f[rm_col]) if rm_col in df.columns else ""
-                r_rep = ottieni_reparto_principale(r_rm_str)
-                
-                if r_rep and r_rep in slot_avversari:
-                    sat_glob = acq_avv[r_rep] / slot_avversari[r_rep]
-                    
-                    n_st_glob = 0
-                    if tit_col_glob and pd.notna(r_f[tit_col_glob]):
-                        try:
-                            n_st_glob = int(float(str(r_f[tit_col_glob]).replace(',', '.')))
-                        except (ValueError, TypeError):
-                            n_st_glob = 0
-                    
-                    # Condizione: Reparto >= 40% E Stelle >= 4
-                    if sat_glob >= 0.40 and n_st_glob >= 4:
-                        set_occasioni.add(g_n_lower)
-        # --------------------------------------------------------------------------------
-        
         for _, row in df_pagina.iterrows():
             g_nome = row[nome_col]
             g_rm = str(row[rm_col]) if rm_col in row else "N/A"
             g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
             
-            # --- GESTIONE FVM ORIGINARIO E INFLAZIONE (Unica novità inserita) ---
             fvm_base_num = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
             val_fvm = int(round(fvm_base_num * c_infl))
             
@@ -622,11 +579,9 @@ if df is not None:
                 fvm_display_html = f'<div class="fvm-badge-right" title="FVM Originario: {fvm_base_num} cr">{val_fvm} cr <span style="font-size: 10px; opacity: 0.8; text-decoration: line-through;">({fvm_base_num})</span></div>'
             else:
                 fvm_display_html = f'<div class="fvm-badge-right">{val_fvm} cr</div>'
-            # -------------------------------------------------------------------
 
             val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
 
-            # --- GESTIONE STELLE DA COLONNA "Titolarità" (Sostituisce l'errore di prima) ---
             stelle = "-"
             tit_col_name = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita']), None)
             if tit_col_name and pd.notna(row[tit_col_name]):
@@ -637,18 +592,12 @@ if df is not None:
                         stelle = "⭐" * num_s
                     except ValueError:
                         stelle = val_t
-            # -------------------------------------------------------------------------------
 
-            # --- IL TUO CODICE ORIGINALE PER I TAG (Intatto) ---
-           # --- COSTRUZIONE DEI TAG COMPLETA ---
             tags_list = []
             
-            # 1. TAG FASCIA
             fascia_c = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
             if fascia_c and pd.notna(row[fascia_c]) and str(row[fascia_c]).strip() not in ['', '-']:
                 val_fascia = str(row[fascia_c]).strip()
-                
-                # Mappatura personalizzata delle fasce
                 mappa_fasce = {
                     't': 'Top',
                     'st': 'Semi-top',
@@ -658,33 +607,26 @@ if df is not None:
                     'tit': 'Tit.scarsi',
                     'out': 'Outsider'
                 }
-                
-                # Traduce la sigla (convertita in minuscolo per sicurezza), se non la trova lascia l'originale
                 nome_fascia = mappa_fasce.get(val_fascia.lower(), val_fascia)
-                
                 tags_list.append(f'<span class="tag-micro">{nome_fascia}</span>')
                 
-            # 2. TAG QUOTAZIONE (Q.ta)
             if val_qta is not None:
                 tags_list.append(f'<span class="tag-micro">Q.ta: {val_qta}</span>')
 
-            # 3. TAG NOTE (Altre info)
             if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
                 for t in str(row[note_col]).split(','): 
                     tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
             
-           # 4. TAG VERO AFFARE (Sincronizzato con il filtro e il contatore)
             g_nome_lower = str(g_nome).strip().lower()
-            if g_nome_lower not in nomi_venduti_totali and g_nome in set_occasioni:
+            if g_nome_lower not in nomi_venduti_totali and g_nome_lower in set_occasioni:
                 ruoli_g = str(g_rm).upper()
-                rep_g = 'P' if ('POR' in ruoli_g or ruoli_g == 'P') else ('D' if any(r in ruoli_g for r in ['DC', 'DD', 'DS', 'E', 'D']) else ('C' if any(r in ruoli_g for r in ['M', 'C']) else 'A'))
+                rep_g = ottieni_reparto_principale(ruoli_g) or 'D'
                 
-                # Recuperiamo la percentuale di saturazione e le stelle per il tooltip
-                perc_sat = int((acq_avv[rep_g] / slot_avversari[rep_g]) * 100)
+                perc_sat = int((acq_avv[rep_g] / slot_avversari[rep_g]) * 100) if rep_g in slot_avversari else 40
                 num_stelle = stelle.count('⭐')
                 
                 tags_list.append(f'<span class="tag-micro tag-affare-style" title="Reparto {rep_g} saturo al {perc_sat}% ({num_stelle} Stelle)">🔥 VERO AFFARE</span>')
-            # 5. TAG TARGET / INTERESSE
+
             is_interesse = False
             int_col = next((c for c in df.columns if str(c).lower() in ['interesse', 'target', 'obiettivo']), None)
             if int_col and pd.notna(row[int_col]):
@@ -695,15 +637,12 @@ if df is not None:
             if is_interesse:
                 tags_list.insert(0, '<span class="tag-micro tag-interesse-style">🎯 TARGET</span>')
             
-            # 6. TAG MIO / VENDUTO
             if g_nome in miei_nomi: 
                 tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
             elif g_nome in venduti_dict: 
                 tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
 
             tags_html = "".join(tags_list)
-            # ------------------------------------
-
             col_bg = get_ruolo_colore(g_rm)
 
             card_html = (
@@ -726,6 +665,7 @@ if df is not None:
             with c_btn:
                 if st.button("⚡", key=f"btn_chiama_{g_nome}", use_container_width=True, help="Gestisci Giocatore"):
                     mostra_modal_chiamata(row.to_dict())
+
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
