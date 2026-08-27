@@ -549,7 +549,7 @@ if df is not None:
             df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
         
-    # --- CALCOLO GLOBALE AFFARI ---
+# --- CALCOLO GLOBALE AFFARI ---
 miei_list_glob = st.session_state.get('miei_acquisti', [])
 altri_list_glob = st.session_state.get('altri_acquisti', [])
 
