@@ -466,69 +466,74 @@ if df is not None:
         # 🔍 TAB 1: LISTONE & ASTA
         # ------------------------------------------
        with tab_asta:
-            set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
-            num_occasioni = len(set_occasioni)
+    set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
+    num_occasioni = len(set_occasioni)
 
-            def reset_ruolo_callback():
-                st.session_state["filtro_ruolo_specifico"] = "Tutti"
+    def reset_ruolo_callback():
+        st.session_state["filtro_ruolo_specifico"] = "Tutti"
 
-            cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro, Dybala...")
+    cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro, Dybala...")
 
-            # --- ⬇️ AGGIUNGIAMO IL FILTRO PER FASCIA QUI SOTTO ⬇️ ---
-            fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
-            scelta_fascia = "Tutte le fasce"
-            if fascia_col_filtro:
-                fasce_disponibili = sorted([str(x).strip() for x in df[fascia_col_filtro].dropna().unique() if str(x).strip() not in ['', '-']])
-                if fasce_disponibili:
-                    scelta_fascia = st.selectbox("⭐ Filtra per Fascia:", ["Tutte le fasce"] + fasce_disponibili, key="filtro_fascia_selectbox")
-            # ----------------------------------------------------
+    # --- FILTRO PER FASCIA ---
+    fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+    scelta_fascia = "Tutte le fasce"
+    if fascia_col_filtro:
+        fasce_disponibili = sorted([str(x).strip() for x in df[fascia_col_filtro].dropna().unique() if str(x).strip() not in ['', '-']])
+        if fasce_disponibili:
+            scelta_fascia = st.selectbox("⭐ Filtra per Fascia:", ["Tutte le fasce"] + fasce_disponibili, key="filtro_fascia_selectbox")
+    # -------------------------
 
-            col_f1, col_f2 = st.columns(2)
-            with col_f1: 
-                macro_reparto = st.selectbox(
-                    "🛡️ Reparto:", 
-                    ["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti", "Attaccanti"], 
-                    key="filtro_macro_reparto", 
-                    on_change=reset_ruolo_callback
-                )
-            with col_f2:
-                opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
-                ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
+    col_f1, col_f2 = st.columns(2)
+    with col_f1: 
+        macro_reparto = st.selectbox(
+            "🛡️ Reparto:", 
+            ["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti", "Attaccanti"], 
+            key="filtro_macro_reparto", 
+            on_change=reset_ruolo_callback
+        )
+    with col_f2:
+        opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
+        ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
 
-            col_cb1, col_cb2 = st.columns(2)
-            with col_cb1: 
-                mostra_anche_venduti = st.checkbox("👁️ Mostra anche Venduti", value=False)
-            with col_cb2: 
-                label_checkbox = f"🔥 Solo Affari / Occasioni ({num_occasioni})" if num_occasioni > 0 else "🔥 Solo Affari / Occasioni"
-                solo_occasioni = st.checkbox(label_checkbox, value=False)
+    col_cb1, col_cb2 = st.columns(2)
+    with col_cb1: 
+        mostra_anche_venduti = st.checkbox("👁️ Mostra anche Venduti", value=False)
+    with col_cb2: 
+        label_checkbox = f"🔥 Solo Affari / Occasioni ({num_occasioni})" if num_occasioni > 0 else "🔥 Solo Affari / Occasioni"
+        solo_occasioni = st.checkbox(label_checkbox, value=False)
 
-            st.divider()
+    st.divider()
 
-            df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
-            
-            if solo_occasioni: df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
-            
-            # --- ⬇️ APPLICHIAMO IL FILTRO FASCIA AL DATAFRAME ⬇️ ---
-            if scelta_fascia != "Tutte le fasce" and fascia_col_filtro:
-                df_filtrato = df_filtrato[df_filtrato[fascia_col_filtro].astype(str).str.strip().str.lower() == scelta_fascia.lower()]
-            # ----------------------------------------------------
-            
-            if macro_reparto != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
-            if ruolo_specifico != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo_specifico) + r'\b', case=False, na=False)]
-            if cerca_nome: df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
-            if nome_col in df_filtrato.columns: df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
+    df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
+    
+    if solo_occasioni: 
+        df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
+    
+    # Applicazione del filtro fascia al dataframe
+    if scelta_fascia != "Tutte le fasce" and fascia_col_filtro:
+        df_filtrato = df_filtrato[df_filtrato[fascia_col_filtro].astype(str).str.strip().str.lower() == scelta_fascia.lower()]
+    
+    if macro_reparto != "Tutti": 
+        df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
+    if ruolo_specifico != "Tutti": 
+        df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo_specifico) + r'\b', case=False, na=False)]
+    if cerca_nome: 
+        df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
+    if nome_col in df_filtrato.columns: 
+        df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
-            tot_risultati = len(df_filtrato)
-            c_pag1, c_pag2 = st.columns(2)
-            with c_pag1: righe_per_pagina = st.selectbox("Righe per pagina:", [50, 100, 200, 500], index=0)
-            num_pagine = max(1, (tot_risultati // righe_per_pagina) + (1 if tot_risultati % righe_per_pagina > 0 else 0))
-            with c_pag2: pagina_corrente = st.number_input(f"Pagina (1 - {num_pagine}):", min_value=1, max_value=num_pagine, value=1, step=1) if num_pagine > 1 else 1
+    tot_risultati = len(df_filtrato)
+    c_pag1, c_pag2 = st.columns(2)
+    with c_pag1: 
+        righe_per_pagina = st.selectbox("Righe per pagina:", [50, 100, 200, 500], index=0)
+    num_pagine = max(1, (tot_risultati // righe_per_pagina) + (1 if tot_risultati % righe_per_pagina > 0 else 0))
+    with c_pag2: 
+        pagina_corrente = st.number_input(f"Pagina (1 - {num_pagine}):", min_value=1, max_value=num_pagine, value=1, step=1) if num_pagine > 1 else 1
 
-            start_idx = (pagina_corrente - 1) * righe_per_pagina
-            df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
+    start_idx = (pagina_corrente - 1) * righe_per_pagina
+    df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
 
-            st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
-
+    st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
             for _, row in df_pagina.iterrows():
                 g_nome = row[nome_col]
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
