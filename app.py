@@ -638,7 +638,7 @@ if df is not None:
                 for t in str(row[note_col]).split(','): 
                     tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
             
-           # 4. TAG AFFARE INTELLIGENTE (Basato sulla saturazione del mercato)
+           # 4. TAG AFFARE INTELLIGENTE (Saturazione >= 40% e 4 o 5 Stelle)
             if g_nome not in nomi_venduti_totali:
                 # Capiamo il reparto del giocatore che stiamo valutando
                 ruoli_g = str(g_rm).upper()
@@ -649,18 +649,22 @@ if df is not None:
                 elif any(r in ruoli_g for r in ['W', 'T', 'A', 'PC']): rep_g = 'A'
 
                 if rep_g:
-                    # Calcolo percentuale slot riempiti dagli avversari (es. 0.75 = 75%)
+                    # Calcolo percentuale slot riempiti dagli avversari
                     saturazione = acq_avv[rep_g] / slot_avversari[rep_g]
                     
-                    # Evitiamo di segnalare i Top (li conoscono tutti) e giocatori inutili (FVM troppo basso)
-                    fascia_val = str(row[fascia_c]).strip().lower() if (fascia_c and pd.notna(row[fascia_c])) else ""
-                    is_no_hype = fascia_val not in ['t', 'top', '1']
-                    fvm_valido = fvm_base_num >= 3  # Ignora chi vale 1 o 2 crediti di base, non sono veri affari
-                    
-                    # Se gli avversari hanno riempito il 70% o più del reparto e il giocatore è "nascosto" ma valido
-                    if saturazione >= 0.40 and is_no_hype and fvm_valido:
+                    # Calcoliamo le stelle direttamente dal valore numerico della colonna
+                    num_stelle = 0
+                    if tit_col_name and pd.notna(row[tit_col_name]):
+                        val_t = str(row[tit_col_name]).strip()
+                        try:
+                            num_stelle = int(float(val_t.replace(',', '.')))
+                        except ValueError:
+                            num_stelle = 0
+
+                    # Se il reparto è saturo almeno al 40% e il giocatore ha 4 o 5 stelle
+                    if saturazione >= 0.40 and num_stelle >= 4:
                         perc_sat = int(saturazione * 100)
-                        tags_list.append(f'<span class="tag-micro tag-affare-style" title="Ruolo saturo al {perc_sat}%">🔥 VERO AFFARE</span>')
+                        tags_list.append(f'<span class="tag-micro tag-affare-style" title="Ruolo saturo al {perc_sat}% ({num_stelle} Stelle)">🔥 VERO AFFARE</span>')
 
             # 5. TAG TARGET / INTERESSE
             is_interesse = False
