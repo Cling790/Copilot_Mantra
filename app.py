@@ -1,26 +1,8 @@
 import streamlit as st
-
-
-
-st.set_page_config(
-
-page_title="Fanta_Cop Mantra 2026/27",
-
-page_icon="logo_robot.svg",
-
-layout="wide"
-
-)
-
 import pandas as pd
-
 import re
-
 import json
-
-import os 
-
-
+import os
 
 st.set_page_config(page_title="Fanta_Cop Mantra 2026/27", layout="wide")
 
