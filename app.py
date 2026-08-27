@@ -572,7 +572,23 @@ if df is not None:
             # 1. TAG FASCIA
             fascia_c = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
             if fascia_c and pd.notna(row[fascia_c]) and str(row[fascia_c]).strip() not in ['', '-']:
-                tags_list.append(f'<span class="tag-micro">Fascia {str(row[fascia_c]).strip()}</span>')
+                val_fascia = str(row[fascia_c]).strip()
+                
+                # Mappatura personalizzata delle fasce
+                mappa_fasce = {
+                    't': 'Top',
+                    'st': 'Semi-top',
+                    '3': 'Terza',
+                    '4': 'Quarta',
+                    'sc': 'Scommessa',
+                    'tit': 'Tit.scarsi',
+                    'out': 'Outsider'
+                }
+                
+                # Traduce la sigla (convertita in minuscolo per sicurezza), se non la trova lascia l'originale
+                nome_fascia = mappa_fasce.get(val_fascia.lower(), val_fascia)
+                
+                tags_list.append(f'<span class="tag-micro">{nome_fascia}</span>')
                 
             # 2. TAG QUOTAZIONE (Q.ta)
             if val_qta is not None:
