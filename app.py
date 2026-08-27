@@ -533,7 +533,7 @@ if df is not None:
             start_idx = (pagina_corrente - 1) * righe_per_pagina
             df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
 
-           st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
+            st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
             
             # --- RECUPERO DATI ACQUISTI PER TAG (MIO / VENDUTO) ---
             miei_nomi = {a['nome']: a['prezzo'] for a in st.session_state.miei_acquisti}
