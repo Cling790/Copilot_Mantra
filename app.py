@@ -549,7 +549,7 @@ if df is not None:
             df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
         
-# --- CALCOLO GLOBALE AFFARI (Con Titolarità Numerica) ---
+# --- CALCOLO GLOBALE AFFARI (Definitivo - Regole Rigorose) ---
         miei_list_glob = st.session_state.get('miei_acquisti', [])
         altri_list_glob = st.session_state.get('altri_acquisti', [])
 
@@ -557,30 +557,30 @@ if df is not None:
         venduti_dict_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in altri_list_glob if isinstance(a, dict) and 'nome' in a}
         nomi_venduti_totali_glob = set(miei_nomi_glob.keys()).union(set(venduti_dict_glob.keys()))
 
-        # Slot avversari: P(36), D(81), C(81), TA(90)
+        # Slot avversari esatti: P(36), D(81), C(81), TA(90)
         slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'TA': 90}
         acq_avv_glob = {'P': 0, 'D': 0, 'C': 0, 'TA': 0}
 
         def ottieni_reparto_principale(ruolo_str):
             if not ruolo_str:
                 return None
+            # Legge chirurgicamente il PRIMO RUOLO prima di slash o virgole
             tokens = [r.strip().upper() for r in str(ruolo_str).replace(';', ',').replace('/', ',').split(',')]
             if not tokens:
                 return None
             
-            # IL PRIMO RUOLO È QUELLO CHE CONTA
             primo = tokens[0]
             if primo in ['P', 'POR']:
                 return 'P'
             elif primo in ['DC', 'DD', 'DS', 'B', 'D']:
                 return 'D'  # Difensori
             elif primo in ['C', 'M', 'E']:
-                return 'C'  # Centrocampisti
+                return 'C'  # Centrocampisti (incluso E)
             elif primo in ['T', 'W', 'A', 'PC']:
-                return 'TA' # Trequartisti e Attaccanti
+                return 'TA' # Trequartisti + Attaccanti
             return None
 
-        # Conteggio acquisti avversari basato sul primo ruolo
+        # Conta gli acquisti degli avversari basandosi unicamente sul primo ruolo
         for nome_v_l in venduti_dict_glob.keys():
             r_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_l]
             if not r_v.empty:
@@ -589,7 +589,7 @@ if df is not None:
                 if rep_v:
                     acq_avv_glob[rep_v] += 1
 
-        # Ricerca della colonna Titolarità
+        # Ricerca della colonna Titolarità con i numeri
         tit_col_glob = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita', 'titolarit\u00e0']), None)
         if not tit_col_glob:
             tit_col_glob = next((c for c in df.columns if 'titolar' in str(c).strip().lower() or 'stelle' in str(c).strip().lower()), None)
@@ -603,18 +603,17 @@ if df is not None:
                 r_rep = ottieni_reparto_principale(r_rm_str)
                 
                 if r_rep:
+                    # Calcola la saturazione del reparto del giocatore
                     sat_glob = acq_avv_glob[r_rep] / slot_avversari[r_rep]
                     
                     n_st_glob = 0
                     if tit_col_glob and pd.notna(r_f[tit_col_glob]):
-                        val_tit = r_f[tit_col_glob]
                         try:
-                            # Converte il numero (sia esso int, float o stringa) in intero pulito
-                            n_st_glob = int(float(str(val_tit).replace(',', '.')))
+                            n_st_glob = int(float(str(r_f[tit_col_glob]).replace(',', '.')))
                         except (ValueError, TypeError):
                             n_st_glob = 0
                     
-                    # Se il reparto supera il 40% e il giocatore ha 4 o 5 stelle (numeriche)
+                    # L'affare scatta SOLO se il reparto supera il 40% E il giocatore ha >= 4 stelle
                     if sat_glob >= 0.40 and n_st_glob >= 4:
                         set_occasioni.add(g_n_lower)
         # --------------------------------------------------------------------------------
