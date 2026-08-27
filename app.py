@@ -542,7 +542,7 @@ if df is not None:
                 
                 # --- GESTIONE FVM ORIGINARIO E INFLAZIONE ---
                 fvm_base_num = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
-                val_fvm = int(round(fvm_base_num * c_infl)) # c_infl è il coefficiente d'inflazione attivo nell'app
+                val_fvm = int(round(fvm_base_num * c_infl))
                 
                 if abs(c_infl - 1.0) > 0.001:
                     fvm_display_html = f'<div class="fvm-badge-right" title="FVM Originario: {fvm_base_num} cr">{val_fvm} cr <span style="font-size: 10px; opacity: 0.8; text-decoration: line-through;">({fvm_base_num})</span></div>'
@@ -551,7 +551,19 @@ if df is not None:
                 # -------------------------------------------
 
                 val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
-                stelle = get_stelle_titolarita(row)
+
+                # --- GESTIONE STELLE DA COLONNA "Titolarità" ---
+                stelle = "-"
+                tit_col_name = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita']), None)
+                if tit_col_name and pd.notna(row[tit_col_name]):
+                    val_t = str(row[tit_col_name]).strip()
+                    if val_t and val_t not in ['', '-', 'nan', 'None']:
+                        try:
+                            num_s = int(float(val_t.replace(',', '.')))
+                            stelle = "⭐" * num_s
+                        except ValueError:
+                            stelle = val_t
+                # ----------------------------------------------
 
                 tags_list = []
                 if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
