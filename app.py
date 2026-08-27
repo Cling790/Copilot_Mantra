@@ -572,6 +572,30 @@ if df is not None:
                 elif any(r in ruoli_v for r in ['M', 'C']): acq_avv['C'] += 1
                 elif any(r in ruoli_v for r in ['W', 'T', 'A', 'PC']): acq_avv['A'] += 1
         # -----------------------------------------------------
+
+        # --- CREAZIONE DINAMICA DEL SET_OCCASIONI (Per filtro e contatore) ---
+        set_occasioni = set()
+        for _, row_f in df.iterrows():
+            g_n = row_f[nome_col]
+            if str(g_n).strip().lower() not in nomi_venduti_totali:
+                r_rm = str(row_f[rm_col]).upper() if rm_col in df.columns else ""
+                r_rep = 'P' if ('POR' in r_rm or r_rm == 'P') else ('D' if any(r in r_rm for r in ['DC', 'DD', 'DS', 'E', 'D']) else ('C' if any(r in r_rm for r in ['M', 'C']) else 'A'))
+                
+                sat = acq_avv[r_rep] / slot_avversari[r_rep]
+                
+                # Calcolo stelle per ogni riga
+                n_st = 0
+                if tit_col_name and pd.notna(row_f[tit_col_name]):
+                    v_t = str(row_f[tit_col_name]).strip()
+                    try:
+                        n_st = int(float(v_t.replace(',', '.')))
+                    except ValueError:
+                        n_st = 0
+                
+                if sat >= 0.40 and n_st >= 4:
+                    set_occasioni.add(g_n)
+        # -------------------------------------------------------------------
+        # -----------------------------------------------------
         # ---------------------------------------------
         
         for _, row in df_pagina.iterrows():
@@ -638,28 +662,17 @@ if df is not None:
                 for t in str(row[note_col]).split(','): 
                     tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
             
-           # 4. TAG AFFARE INTELLIGENTE (Saturazione >= 40% e 4 o 5 Stelle)
+           # 4. TAG VERO AFFARE (Sincronizzato con il filtro e il contatore)
             g_nome_lower = str(g_nome).strip().lower()
-            if g_nome_lower not in nomi_venduti_totali:
-                # Capiamo il reparto del giocatore che stiamo valutando
+            if g_nome_lower not in nomi_venduti_totali and g_nome in set_occasioni:
                 ruoli_g = str(g_rm).upper()
-                rep_g = None
-                if 'POR' in ruoli_g or ruoli_g == 'P': rep_g = 'P'
-                elif any(r in ruoli_g for r in ['DC', 'DD', 'DS', 'E', 'D']): rep_g = 'D'
-                elif any(r in ruoli_g for r in ['M', 'C']): rep_g = 'C'
-                elif any(r in ruoli_g for r in ['W', 'T', 'A', 'PC']): rep_g = 'A'
-
-                if rep_g:
-                    # Calcolo percentuale slot riempiti dagli avversari
-                    saturazione = acq_avv[rep_g] / slot_avversari[rep_g]
-                    
-                    # Conteggio diretto delle stelline dalla variabile 'stelle' già pronta sopra
-                    num_stelle = stelle.count('⭐')
-
-                    # Se il reparto è saturo almeno al 40% e ha 4 o 5 stelle
-                    if saturazione >= 0.40 and num_stelle >= 4:
-                        perc_sat = int(saturazione * 100)
-                        tags_list.append(f'<span class="tag-micro tag-affare-style" title="Ruolo saturo al {perc_sat}% ({num_stelle} Stelle)">🔥 VERO AFFARE</span>')
+                rep_g = 'P' if ('POR' in ruoli_g or ruoli_g == 'P') else ('D' if any(r in ruoli_g for r in ['DC', 'DD', 'DS', 'E', 'D']) else ('C' if any(r in ruoli_g for r in ['M', 'C']) else 'A'))
+                
+                # Recuperiamo la percentuale di saturazione e le stelle per il tooltip
+                perc_sat = int((acq_avv[rep_g] / slot_avversari[rep_g]) * 100)
+                num_stelle = stelle.count('⭐')
+                
+                tags_list.append(f'<span class="tag-micro tag-affare-style" title="Reparto {rep_g} saturo al {perc_sat}% ({num_stelle} Stelle)">🔥 VERO AFFARE</span>')
             # 5. TAG TARGET / INTERESSE
             is_interesse = False
             int_col = next((c for c in df.columns if str(c).lower() in ['interesse', 'target', 'obiettivo']), None)
