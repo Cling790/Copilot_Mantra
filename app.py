@@ -308,15 +308,55 @@ coeff_inflazione = (tot_spesa_uscite / tot_fvm_uscite) if tot_fvm_uscite > 0 els
 
 def calcola_occasioni(df_completo, tutti_venduti):
     nomi_venduti = set(v['Nome'] for v in tutti_venduti)
+    
+    # Individuiamo le colonne necessarie all'interno della funzione
     fvm_col = next((c for c in df_completo.columns if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm']), None)
-    df_top = df_completo[pd.to_numeric(df_completo[fvm_col], errors='coerce') >= 20].copy() if fvm_col else df_completo.copy()
-    occasioni_set = set()
+    fascia_col = next((c for c in df_completo.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+    tit_col = next((c for c in df_completo.columns if str(c).lower() in ['titolarità', 'titolarita', 'tit', 'status']), None)
     rm_col = next((c for c in df_completo.columns if str(c).upper() == 'RM'), 'RM')
+    
+    # Filtriamo i giocatori che rispettano i tuoi criteri di "interesse strategico":
+    # 1. Devono appartenere alla fascia Top o Semi-top
+    # OR
+    # 2. Devono avere 4 o 5 stelle di titolarità (es. '⭐⭐⭐⭐' o '⭐⭐⭐⭐⭐' o numeri 4/5)
+    def is_valido_per_affare(row):
+        # Controllo Fascia (Top / Semi-top)
+        is_top_semitop = False
+        if fascia_col and pd.notna(row[fascia_col]):
+            f_txt = str(row[fascia_col]).strip().lower()
+            if any(k in f_txt for k in ['top', 'semi', 'semitop', 'semi-top']):
+                is_top_semitop = True
+                
+        # Controllo Stelle di titolarità (4 o 5)
+        is_4_5_stelle = False
+        if tit_col and pd.notna(row[tit_col]):
+            val_tit = str(row[tit_col]).strip()
+            # Conta quante stelle ci sono oppure controlla se il valore numerico/testuale è 4 o 5
+            num_stelle = val_tit.count('⭐')
+            if num_stelle >= 4:
+                is_4_5_stelle = True
+            else:
+                # Gestione nel caso in cui siano scritti come numeri (es. "4" o "5")
+                try:
+                    if float(val_tit.replace(',', '.')) >= 4:
+                        is_4_5_stelle = True
+                except ValueError:
+                    pass
+                    
+        return is_top_semitop or is_4_5_stelle
+
+    # Creiamo un sottoinsieme con i giocatori che passano il filtro strategico
+    df_criterio = df_completo[df_completo.apply(is_valido_per_affare, axis=1)].copy()
+    
+    occasioni_set = set()
     for ruolo in LISTA_RUOLI_MANTRA[1:]:
-        df_ruolo = df_top[df_top[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo) + r'\b', case=False, na=False)]
+        df_ruolo = df_criterio[df_criterio[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo) + r'\b', case=False, na=False)]
         if len(df_ruolo) >= 3:
+            # Se il 60% dei giocatori di quel ruolo (che rientrano nei criteri top/stelle) è stato venduto
             if (len(df_ruolo[df_ruolo['Nome'].isin(nomi_venduti)]) / len(df_ruolo)) >= 0.60:
-                for n in df_ruolo[~df_ruolo['Nome'].isin(nomi_venduti)]['Nome']: occasioni_set.add(n)
+                for n in df_ruolo[~df_ruolo['Nome'].isin(nomi_venduti)]['Nome']: 
+                    occasioni_set.add(n)
+                    
     return occasioni_set
     
 # --- HEADER & SIDEBAR ---
