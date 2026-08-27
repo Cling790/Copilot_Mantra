@@ -465,7 +465,7 @@ if df is not None:
         # ------------------------------------------
         # 🔍 TAB 1: LISTONE & ASTA
         # ------------------------------------------
-       with tab_asta:
+with tab_asta:
     set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
     num_occasioni = len(set_occasioni)
 
