@@ -549,7 +549,7 @@ if df is not None:
             df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
         
-# --- CALCOLO GLOBALE AFFARI SICURO (Con parsing ruoli esatto) ---
+# --- CALCOLO GLOBALE AFFARI (Slot e Reparti Lega Ufficiali) ---
         miei_list_glob = st.session_state.get('miei_acquisti', [])
         altri_list_glob = st.session_state.get('altri_acquisti', [])
 
@@ -557,23 +557,37 @@ if df is not None:
         venduti_dict_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in altri_list_glob if isinstance(a, dict) and 'nome' in a}
         nomi_venduti_totali_glob = set(miei_nomi_glob.keys()).union(set(venduti_dict_glob.keys()))
 
-        slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'A': 90}
-        acq_avv_glob = {'P': 0, 'D': 0, 'C': 0, 'A': 0}
+        # Slot avversari definiti secondo le tue direttive: P(36), D(81), C(81), T+A(90)
+        slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'TA': 90}
+        acq_avv_glob = {'P': 0, 'D': 0, 'C': 0, 'TA': 0}
 
+        def ottieni_reparto_principale(ruolo_str):
+            if not ruolo_str:
+                return None
+            tokens = [r.strip().upper() for r in str(ruolo_str).replace(';', ',').replace('/', ',').split(',')]
+            if not tokens:
+                return None
+            
+            # IL PRIMO RUOLO È QUELLO CHE CONTA
+            primo = tokens[0]
+            if primo in ['P', 'POR']:
+                return 'P'
+            elif primo in ['DC', 'DD', 'DS', 'B', 'D']:
+                return 'D'
+            elif primo in ['C', 'M', 'E']:
+                return 'C'
+            elif primo in ['T', 'W', 'A', 'PC']:
+                return 'TA'  # Trequartisti e Attaccanti uniti nel gruppo da 90 slot
+            return None
+
+        # Conteggio acquisti avversari basato sul primo ruolo
         for nome_v_l in venduti_dict_glob.keys():
             r_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_l]
             if not r_v.empty:
                 r_v_ruolo_str = str(r_v.iloc[0][rm_col])
-                tokens_v = [r.strip().upper() for r in r_v_ruolo_str.replace(';', ',').replace('/', ',').split(',')]
-                
-                if any(t in ['P', 'POR'] for t in tokens_v): 
-                    acq_avv_glob['P'] += 1
-                elif any(t in ['DC', 'DD', 'DS', 'E', 'D'] for t in tokens_v): 
-                    acq_avv_glob['D'] += 1
-                elif any(t in ['M', 'C'] for t in tokens_v): 
-                    acq_avv_glob['C'] += 1
-                elif any(t in ['W', 'T', 'A', 'PC'] for t in tokens_v): 
-                    acq_avv_glob['A'] += 1
+                rep_v = ottieni_reparto_principale(r_v_ruolo_str)
+                if rep_v:
+                    acq_avv_glob[rep_v] += 1
 
         tit_col_glob = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita']), None)
 
@@ -583,13 +597,7 @@ if df is not None:
             g_n_lower = str(g_n).strip().lower()
             if g_n_lower not in nomi_venduti_totali_glob:
                 r_rm_str = str(r_f[rm_col]) if rm_col in df.columns else ""
-                tokens_g = [r.strip().upper() for r in r_rm_str.replace(';', ',').replace('/', ',').split(',')]
-                
-                r_rep = None
-                if any(t in ['P', 'POR'] for t in tokens_g): r_rep = 'P'
-                elif any(t in ['DC', 'DD', 'DS', 'E', 'D'] for t in tokens_g): r_rep = 'D'
-                elif any(t in ['M', 'C'] for t in tokens_g): r_rep = 'C'
-                elif any(t in ['W', 'T', 'A', 'PC'] for t in tokens_g): r_rep = 'A'
+                r_rep = ottieni_reparto_principale(r_rm_str)
                 
                 if r_rep:
                     sat_glob = acq_avv_glob[r_rep] / slot_avversari[r_rep]
@@ -605,8 +613,9 @@ if df is not None:
                             except ValueError:
                                 n_st_glob = 0
                     
+                    # Se il reparto supera il 40% e il giocatore ha 4 o 5 stelle
                     if sat_glob >= 0.40 and n_st_glob >= 4:
-                        set_occasioni.add(g_n)
+                        set_occasioni.add(g_n_lower)
         # --------------------------------------------------------------------------------
         
         for _, row in df_pagina.iterrows():
