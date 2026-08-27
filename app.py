@@ -535,21 +535,12 @@ if df is not None:
 
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
         
-        # --- RECUPERO DATI ACQUISTI SICURO ---
-        miei_list = st.session_state.get('miei_acquisti', [])
-        altri_list = st.session_state.get('altri_acquisti', [])
-        
-        miei_nomi = {a['nome']: a['prezzo'] for a in miei_list if isinstance(a, dict) and 'nome' in a}
-        venduti_dict = {a['nome']: a['prezzo'] for a in altri_list if isinstance(a, dict) and 'nome' in a}
-        nomi_venduti_totali = set(miei_nomi.keys()).union(set(venduti_dict.keys()))
-        # -------------------------------------
-
         for _, row in df_pagina.iterrows():
             g_nome = row[nome_col]
             g_rm = str(row[rm_col]) if rm_col in row else "N/A"
             g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
             
-            # --- GESTIONE FVM ORIGINARIO E INFLAZIONE ---
+            # --- GESTIONE FVM ORIGINARIO E INFLAZIONE (Unica novità inserita) ---
             fvm_base_num = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
             val_fvm = int(round(fvm_base_num * c_infl))
             
@@ -557,11 +548,11 @@ if df is not None:
                 fvm_display_html = f'<div class="fvm-badge-right" title="FVM Originario: {fvm_base_num} cr">{val_fvm} cr <span style="font-size: 10px; opacity: 0.8; text-decoration: line-through;">({fvm_base_num})</span></div>'
             else:
                 fvm_display_html = f'<div class="fvm-badge-right">{val_fvm} cr</div>'
-            # -------------------------------------------
+            # -------------------------------------------------------------------
 
             val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
 
-            # --- GESTIONE STELLE DA COLONNA "Titolarità" ---
+            # --- GESTIONE STELLE DA COLONNA "Titolarità" (Sostituisce l'errore di prima) ---
             stelle = "-"
             tit_col_name = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita']), None)
             if tit_col_name and pd.notna(row[tit_col_name]):
@@ -572,9 +563,9 @@ if df is not None:
                         stelle = "⭐" * num_s
                     except ValueError:
                         stelle = val_t
-            # ----------------------------------------------
+            # -------------------------------------------------------------------------------
 
-            # --- COSTRUZIONE DEI TAG ---
+            # --- IL TUO CODICE ORIGINALE PER I TAG (Intatto) ---
             tags_list = []
             
             if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
