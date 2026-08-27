@@ -533,8 +533,14 @@ if df is not None:
             start_idx = (pagina_corrente - 1) * righe_per_pagina
             df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
 
-            st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
+           st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
             
+            # --- RECUPERO DATI ACQUISTI PER TAG (MIO / VENDUTO) ---
+            miei_nomi = {a['nome']: a['prezzo'] for a in st.session_state.miei_acquisti}
+            venduti_dict = {a['nome']: a['prezzo'] for a in st.session_state.altri_acquisti}
+            nomi_venduti_totali = set(miei_nomi.keys()).union(set(venduti_dict.keys()))
+            # ---------------------------------------------------
+
             for _, row in df_pagina.iterrows():
                 g_nome = row[nome_col]
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
@@ -565,14 +571,19 @@ if df is not None:
                             stelle = val_t
                 # ----------------------------------------------
 
+                # --- COSTRUZIONE DEI TAG ---
                 tags_list = []
+                
+                # Tag dalle Note/Info dell'Excel
                 if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
                     for t in str(row[note_col]).split(','): 
                         tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
                 
+                # Tag AFFARE (se in occasione e non ancora venduto)
                 if g_nome in set_occasioni and g_nome not in nomi_venduti_totali: 
                     tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
 
+                # Tag TARGET/INTERESSE
                 is_interesse = False
                 if interesse_col and pd.notna(row[interesse_col]):
                     val_int = str(row[interesse_col]).strip().upper()
@@ -582,6 +593,7 @@ if df is not None:
                 if is_interesse:
                     tags_list.insert(0, '<span class="tag-micro tag-interesse-style">🎯 TARGET</span>')
                 
+                # Tag MIO o VENDUTO
                 if g_nome in miei_nomi: 
                     tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
                 elif g_nome in venduti_dict: 
