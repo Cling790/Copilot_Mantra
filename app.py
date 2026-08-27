@@ -658,7 +658,7 @@ if df is not None:
                     fvm_valido = fvm_base_num >= 3  # Ignora chi vale 1 o 2 crediti di base, non sono veri affari
                     
                     # Se gli avversari hanno riempito il 70% o più del reparto e il giocatore è "nascosto" ma valido
-                    if saturazione >= 0.70 and is_no_hype and fvm_valido:
+                    if saturazione >= 0.40 and is_no_hype and fvm_valido:
                         perc_sat = int(saturazione * 100)
                         tags_list.append(f'<span class="tag-micro tag-affare-style" title="Ruolo saturo al {perc_sat}%">🔥 VERO AFFARE</span>')
 
