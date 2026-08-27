@@ -549,7 +549,7 @@ if df is not None:
             df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
         
-# --- CALCOLO GLOBALE AFFARI (Slot e Reparti Lega Ufficiali) ---
+# --- CALCOLO GLOBALE AFFARI (Con Titolarità Numerica) ---
         miei_list_glob = st.session_state.get('miei_acquisti', [])
         altri_list_glob = st.session_state.get('altri_acquisti', [])
 
@@ -557,7 +557,7 @@ if df is not None:
         venduti_dict_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in altri_list_glob if isinstance(a, dict) and 'nome' in a}
         nomi_venduti_totali_glob = set(miei_nomi_glob.keys()).union(set(venduti_dict_glob.keys()))
 
-        # Slot avversari definiti secondo le tue direttive: P(36), D(81), C(81), T+A(90)
+        # Slot avversari: P(36), D(81), C(81), TA(90)
         slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'TA': 90}
         acq_avv_glob = {'P': 0, 'D': 0, 'C': 0, 'TA': 0}
 
@@ -573,11 +573,11 @@ if df is not None:
             if primo in ['P', 'POR']:
                 return 'P'
             elif primo in ['DC', 'DD', 'DS', 'B', 'D']:
-                return 'D'
+                return 'D'  # Difensori
             elif primo in ['C', 'M', 'E']:
-                return 'C'
+                return 'C'  # Centrocampisti
             elif primo in ['T', 'W', 'A', 'PC']:
-                return 'TA'  # Trequartisti e Attaccanti uniti nel gruppo da 90 slot
+                return 'TA' # Trequartisti e Attaccanti
             return None
 
         # Conteggio acquisti avversari basato sul primo ruolo
@@ -589,7 +589,10 @@ if df is not None:
                 if rep_v:
                     acq_avv_glob[rep_v] += 1
 
-        tit_col_glob = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita']), None)
+        # Ricerca della colonna Titolarità
+        tit_col_glob = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita', 'titolarit\u00e0']), None)
+        if not tit_col_glob:
+            tit_col_glob = next((c for c in df.columns if 'titolar' in str(c).strip().lower() or 'stelle' in str(c).strip().lower()), None)
 
         set_occasioni = set()
         for _, r_f in df.iterrows():
@@ -604,16 +607,14 @@ if df is not None:
                     
                     n_st_glob = 0
                     if tit_col_glob and pd.notna(r_f[tit_col_glob]):
-                        v_t_glob = str(r_f[tit_col_glob]).strip()
-                        if '⭐' in v_t_glob:
-                            n_st_glob = v_t_glob.count('⭐')
-                        else:
-                            try:
-                                n_st_glob = int(float(v_t_glob.replace(',', '.')))
-                            except ValueError:
-                                n_st_glob = 0
+                        val_tit = r_f[tit_col_glob]
+                        try:
+                            # Converte il numero (sia esso int, float o stringa) in intero pulito
+                            n_st_glob = int(float(str(val_tit).replace(',', '.')))
+                        except (ValueError, TypeError):
+                            n_st_glob = 0
                     
-                    # Se il reparto supera il 40% e il giocatore ha 4 o 5 stelle
+                    # Se il reparto supera il 40% e il giocatore ha 4 o 5 stelle (numeriche)
                     if sat_glob >= 0.40 and n_st_glob >= 4:
                         set_occasioni.add(g_n_lower)
         # --------------------------------------------------------------------------------
