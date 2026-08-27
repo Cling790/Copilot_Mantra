@@ -309,54 +309,61 @@ coeff_inflazione = (tot_spesa_uscite / tot_fvm_uscite) if tot_fvm_uscite > 0 els
 def calcola_occasioni(df_completo, tutti_venduti):
     nomi_venduti = set(v['Nome'] for v in tutti_venduti)
     
-    # Individuiamo le colonne necessarie all'interno della funzione
     fvm_col = next((c for c in df_completo.columns if str(c).lower() in ['fvm m', 'fvm_m', 'fvm mantra', 'fvm']), None)
     fascia_col = next((c for c in df_completo.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
     tit_col = next((c for c in df_completo.columns if str(c).lower() in ['titolarità', 'titolarita', 'tit', 'status']), None)
     rm_col = next((c for c in df_completo.columns if str(c).upper() == 'RM'), 'RM')
     
-    # Filtriamo i giocatori che rispettano i tuoi criteri di "interesse strategico":
-    # 1. Devono appartenere alla fascia Top o Semi-top
-    # OR
-    # 2. Devono avere 4 o 5 stelle di titolarità (es. '⭐⭐⭐⭐' o '⭐⭐⭐⭐⭐' o numeri 4/5)
-    def is_valido_per_affare(row):
-        # Controllo Fascia (Top / Semi-top)
-        is_top_semitop = False
+    occasioni_set = set()
+    
+    # Funzione di supporto per estrarre la "categoria" (Fascia o Stelle) del giocatore
+    def get_categoria_strategica(row):
+        # 1. Controlliamo se ha una fascia scritta (es. Top, Semi-top, Titolare, ecc.)
         if fascia_col and pd.notna(row[fascia_col]):
-            f_txt = str(row[fascia_col]).strip().lower()
-            if any(k in f_txt for k in ['top', 'semi', 'semitop', 'semi-top']):
-                is_top_semitop = True
-                
-        # Controllo Stelle di titolarità (4 o 5)
-        is_4_5_stelle = False
+            f_txt = str(row[fascia_col]).strip()
+            if f_txt and f_txt not in ['-', '']:
+                return f_txt.lower() # Es. 'top', 'semi-top', ecc.
+        
+        # 2. Se non ha una fascia testuale, usiamo le stelle di titolarità come categoria (es. '4 stelle', '5 stelle')
         if tit_col and pd.notna(row[tit_col]):
             val_tit = str(row[tit_col]).strip()
-            # Conta quante stelle ci sono oppure controlla se il valore numerico/testuale è 4 o 5
             num_stelle = val_tit.count('⭐')
             if num_stelle >= 4:
-                is_4_5_stelle = True
+                return f'{num_stelle}_stelle'
             else:
-                # Gestione nel caso in cui siano scritti come numeri (es. "4" o "5")
                 try:
-                    if float(val_tit.replace(',', '.')) >= 4:
-                        is_4_5_stelle = True
+                    num_val = float(val_tit.replace(',', '.'))
+                    if num_val >= 4:
+                        return f'{int(num_val)}_stelle'
                 except ValueError:
                     pass
                     
-        return is_top_semitop or is_4_5_stelle
+        return None # Giocatori di fascia bassa o meno importanti che non attivano gli affari di fascia
 
-    # Creiamo un sottoinsieme con i giocatori che passano il filtro strategico
-    df_criterio = df_completo[df_completo.apply(is_valido_per_affare, axis=1)].copy()
+    # Aggiungiamo temporaneamente la colonna della categoria al dataframe di lavoro
+    df_lavoro = df_completo.copy()
+    df_lavoro['categoria_affare'] = df_lavoro.apply(get_categoria_strategica, axis=1)
     
-    occasioni_set = set()
+    # Scorriamo ogni ruolo Mantra (es. Por, Dc, Dd, Ds, E, C, W, T, A, Pc)
     for ruolo in LISTA_RUOLI_MANTRA[1:]:
-        df_ruolo = df_criterio[df_criterio[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo) + r'\b', case=False, na=False)]
-        if len(df_ruolo) >= 3:
-            # Se il 60% dei giocatori di quel ruolo (che rientrano nei criteri top/stelle) è stato venduto
-            if (len(df_ruolo[df_ruolo['Nome'].isin(nomi_venduti)]) / len(df_ruolo)) >= 0.60:
-                for n in df_ruolo[~df_ruolo['Nome'].isin(nomi_venduti)]['Nome']: 
-                    occasioni_set.add(n)
-                    
+        df_ruolo = df_lavoro[df_lavoro[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo) + r'\b', case=False, na=False)]
+        
+        # Isoliamo solo i giocatori che appartengono a una fascia/categoria strategica valida
+        df_strategici = df_ruolo[df_ruolo['categoria_affare'].notna()]
+        
+        # Analizziamo il consumo del 60% DIVISO PER SINGOLA FASCIA all'interno del ruolo
+        for categoria, df_fascia in df_strategici.groupby('categoria_affare'):
+            # Vogliamo che ci sia un numero minimo di giocatori in quella fascia (es. almeno 2 o 3) per far scattare la percentuale
+            if len(df_fascia) >= 2:
+                venduti_in_fascia = df_fascia[df_fascia['Nome'].isin(nomi_venduti)]
+                
+                # Se il 60% (o più) di QUELLA SPECIFICA FASCIA è stato venduto...
+                if (len(venduti_in_fascia) / len(df_fascia)) >= 0.60:
+                    # ...allora tutti i superstiti di quella fascia diventano un AFFARE 🔥
+                    rimasti_in_fascia = df_fascia[~df_fascia['Nome'].isin(nomi_venduti)]
+                    for n in rimasti_in_fascia['Nome']:
+                        occasioni_set.add(n)
+                        
     return occasioni_set
     
 # --- HEADER & SIDEBAR ---
