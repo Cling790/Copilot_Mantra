@@ -550,17 +550,16 @@ if df is not None:
 
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
         
-        # --- RECUPERO DATI ACQUISTI (Robusto) ---
-        # --- CALCOLO GLOBALE AFFARI (In cima al codice, dopo il caricamento di df) ---
-    miei_list_glob = st.session_state.get('miei_acquisti', [])
-    altri_list_glob = st.session_state.get('altri_acquisti', [])
+        # --- CALCOLO GLOBALE AFFARI ---
+miei_list_glob = st.session_state.get('miei_acquisti', [])
+altri_list_glob = st.session_state.get('altri_acquisti', [])
 
-    miei_nomi_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in miei_list_glob if isinstance(a, dict) and 'nome' in a}
-    venduti_dict_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in altri_list_glob if isinstance(a, dict) and 'nome' in a}
-    nomi_venduti_totali_glob = set(miei_nomi_glob.keys()).union(set(venduti_dict_glob.keys()))
+miei_nomi_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in miei_list_glob if isinstance(a, dict) and 'nome' in a}
+venduti_dict_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in altri_list_glob if isinstance(a, dict) and 'nome' in a}
+nomi_venduti_totali_glob = set(miei_nomi_glob.keys()).union(set(venduti_dict_glob.keys()))
 
-    slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'A': 90}
-    acq_avv_glob = {'P': 0, 'D': 0, 'C': 0, 'A': 0}
+slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'A': 90}
+acq_avv_glob = {'P': 0, 'D': 0, 'C': 0, 'A': 0}
 
 for nome_v_l in venduti_dict_glob.keys():
     r_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_l]
@@ -582,7 +581,6 @@ for _, r_f in df.iterrows():
         
         sat_glob = acq_avv_glob[r_rep] / slot_avversari[r_rep]
         
-        # Conteggio stelle robusto (legge sia le emoji ⭐ che i numeri)
         n_st_glob = 0
         if tit_col_glob and pd.notna(r_f[tit_col_glob]):
             v_t_glob = str(r_f[tit_col_glob]).strip()
