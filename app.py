@@ -465,7 +465,7 @@ if df is not None:
         # ------------------------------------------
         # 🔍 TAB 1: LISTONE & ASTA
         # ------------------------------------------
-        with tab_asta:
+       with tab_asta:
             set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
             num_occasioni = len(set_occasioni)
 
@@ -473,6 +473,15 @@ if df is not None:
                 st.session_state["filtro_ruolo_specifico"] = "Tutti"
 
             cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro, Dybala...")
+
+            # --- ⬇️ AGGIUNGIAMO IL FILTRO PER FASCIA QUI SOTTO ⬇️ ---
+            fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+            scelta_fascia = "Tutte le fasce"
+            if fascia_col_filtro:
+                fasce_disponibili = sorted([str(x).strip() for x in df[fascia_col_filtro].dropna().unique() if str(x).strip() not in ['', '-']])
+                if fasce_disponibili:
+                    scelta_fascia = st.selectbox("⭐ Filtra per Fascia:", ["Tutte le fasce"] + fasce_disponibili, key="filtro_fascia_selectbox")
+            # ----------------------------------------------------
 
             col_f1, col_f2 = st.columns(2)
             with col_f1: 
@@ -496,7 +505,14 @@ if df is not None:
             st.divider()
 
             df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
+            
             if solo_occasioni: df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
+            
+            # --- ⬇️ APPLICHIAMO IL FILTRO FASCIA AL DATAFRAME ⬇️ ---
+            if scelta_fascia != "Tutte le fasce" and fascia_col_filtro:
+                df_filtrato = df_filtrato[df_filtrato[fascia_col_filtro].astype(str).str.strip().str.lower() == scelta_fascia.lower()]
+            # ----------------------------------------------------
+            
             if macro_reparto != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
             if ruolo_specifico != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo_specifico) + r'\b', case=False, na=False)]
             if cerca_nome: df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
