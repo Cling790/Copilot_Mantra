@@ -549,73 +549,45 @@ if df is not None:
             df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
         
-# --- CALCOLO GLOBALE AFFARI (Blindato su "Titolarità") ---
-        miei_list_glob = st.session_state.get('miei_acquisti', [])
-        altri_list_glob = st.session_state.get('altri_acquisti', [])
+# --- CALCOLO GLOBALE AFFARI UNIFICATO ---
+    miei_nomi_glob = {str(p['Nome']).strip().lower(): p['Prezzo'] for p in st.session_state.rosa}
+    venduti_dict_glob = {str(v['Nome']).strip().lower(): v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
+    nomi_venduti_totali_glob = set(miei_nomi_glob.keys()).union(set(venduti_dict_glob.keys()))
 
-        miei_nomi_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in miei_list_glob if isinstance(a, dict) and 'nome' in a}
-        venduti_dict_glob = {str(a['nome']).strip().lower(): a['prezzo'] for a in altri_list_glob if isinstance(a, dict) and 'nome' in a}
-        nomi_venduti_totali_glob = set(miei_nomi_glob.keys()).union(set(venduti_dict_glob.keys()))
+    slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'TA': 90}
+    acq_avv = {'P': 0, 'D': 0, 'C': 0, 'TA': 0}
 
-        slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'TA': 90}
-        acq_avv_glob = {'P': 0, 'D': 0, 'C': 0, 'TA': 0}
+    for nome_v_l in venduti_dict_glob.keys():
+        r_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_l]
+        if not r_v.empty:
+            r_v_ruolo_str = str(r_v.iloc[0][rm_col])
+            rep_v = ottieni_reparto_principale(r_v_ruolo_str)
+            if rep_v in acq_avv:
+                acq_avv[rep_v] += 1
 
-        def ottieni_reparto_principale(ruolo_str):
-            if not ruolo_str:
-                return None
-            tokens = [r.strip().upper() for r in str(ruolo_str).replace(';', ',').replace('/', ',').split(',')]
-            if not tokens:
-                return None
+    tit_col_glob = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita', 'stelle']), None)
+
+    set_occasioni = set()
+    for _, r_f in df.iterrows():
+        g_n = r_f[nome_col]
+        g_n_lower = str(g_n).strip().lower()
+        if g_n_lower not in nomi_venduti_totali_glob:
+            r_rm_str = str(r_f[rm_col]) if rm_col in df.columns else ""
+            r_rep = ottieni_reparto_principale(r_rm_str)
             
-            primo = tokens[0]
-            if primo in ['P', 'POR']:
-                return 'P'
-            elif primo in ['DC', 'DD', 'DS', 'B', 'D']:
-                return 'D'  # Difensori
-            elif primo in ['C', 'M', 'E']:
-                return 'C'  # Centrocampisti
-            elif primo in ['T', 'W', 'A', 'PC']:
-                return 'TA' # Trequartisti + Attaccanti
-            return None
-
-        for nome_v_l in venduti_dict_glob.keys():
-            r_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_l]
-            if not r_v.empty:
-                r_v_ruolo_str = str(r_v.iloc[0][rm_col])
-                rep_v = ottieni_reparto_principale(r_v_ruolo_str)
-                if rep_v:
-                    acq_avv_glob[rep_v] += 1
-
-        # CERCA ESATTAMENTE "Titolarità" (gestisce anche varianti senza accento o "Stelle")
-        tit_col_glob = None
-        for c in df.columns:
-            c_pulita = str(c).strip()
-            if c_pulita.lower() in ['titolarità', 'titolarita', 'stelle', 'titolarit\u00e0']:
-                tit_col_glob = c
-                break
-
-        set_occasioni = set()
-        for _, r_f in df.iterrows():
-            g_n = r_f[nome_col]
-            g_n_lower = str(g_n).strip().lower()
-            if g_n_lower not in nomi_venduti_totali_glob:
-                r_rm_str = str(r_f[rm_col]) if rm_col in df.columns else ""
-                r_rep = ottieni_reparto_principale(r_rm_str)
+            if r_rep and r_rep in slot_avversari:
+                sat_glob = acq_avv[r_rep] / slot_avversari[r_rep]
                 
-                if r_rep:
-                    sat_glob = acq_avv_glob[r_rep] / slot_avversari[r_rep]
-                    
-                    n_st_glob = 0
-                    if tit_col_glob and tit_col_glob in df.columns and pd.notna(r_f[tit_col_glob]):
-                        try:
-                            # Legge il numero da 1 a 5 presente nella cella
-                            n_st_glob = int(float(str(r_f[tit_col_glob]).replace(',', '.')))
-                        except (ValueError, TypeError):
-                            n_st_glob = 0
-                    
-                    # CONDIZIONE FERREA: Il reparto deve essere >= 40% E le stelle numeriche >= 4
-                    if sat_glob >= 0.40 and n_st_glob >= 4:
-                        set_occasioni.add(g_n_lower)
+                n_st_glob = 0
+                if tit_col_glob and pd.notna(r_f[tit_col_glob]):
+                    try:
+                        n_st_glob = int(float(str(r_f[tit_col_glob]).replace(',', '.')))
+                    except (ValueError, TypeError):
+                        n_st_glob = 0
+                
+                # Condizione: Reparto >= 40% E Stelle >= 4
+                if sat_glob >= 0.40 and n_st_glob >= 4:
+                    set_occasioni.add(g_n_lower)
         # --------------------------------------------------------------------------------
         
         for _, row in df_pagina.iterrows():
