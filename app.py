@@ -566,30 +566,47 @@ if df is not None:
             # -------------------------------------------------------------------------------
 
             # --- IL TUO CODICE ORIGINALE PER I TAG (Intatto) ---
+           # --- COSTRUZIONE DEI TAG COMPLETA ---
             tags_list = []
             
+            # 1. TAG FASCIA
+            fascia_c = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+            if fascia_c and pd.notna(row[fascia_c]) and str(row[fascia_c]).strip() not in ['', '-']:
+                tags_list.append(f'<span class="tag-micro">Fascia {str(row[fascia_c]).strip()}</span>')
+                
+            # 2. TAG QUOTAZIONE (Q.ta)
+            if val_qta is not None:
+                tags_list.append(f'<span class="tag-micro">Q.ta: {val_qta}</span>')
+
+            # 3. TAG NOTE (Altre info)
             if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
                 for t in str(row[note_col]).split(','): 
                     tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
             
+            # 4. TAG AFFARE
             if g_nome in set_occasioni and g_nome not in nomi_venduti_totali: 
                 tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
 
+            # 5. TAG TARGET / INTERESSE
             is_interesse = False
-            if interesse_col and pd.notna(row[interesse_col]):
-                val_int = str(row[interesse_col]).strip().upper()
-                if val_int in ['X', 'SI', 'SÌ', '1', 'TRUE', 'YES']:
+            int_col = next((c for c in df.columns if str(c).lower() in ['interesse', 'target', 'obiettivo']), None)
+            if int_col and pd.notna(row[int_col]):
+                val_int = str(row[int_col]).strip().upper()
+                if val_int in ['X', 'SI', 'SÌ', '1', 'TRUE', 'YES'] or (val_int != '' and val_int != '-'):
                     is_interesse = True
 
             if is_interesse:
                 tags_list.insert(0, '<span class="tag-micro tag-interesse-style">🎯 TARGET</span>')
             
+            # 6. TAG MIO / VENDUTO
             if g_nome in miei_nomi: 
                 tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
             elif g_nome in venduti_dict: 
                 tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
 
             tags_html = "".join(tags_list)
+            # ------------------------------------
+
             col_bg = get_ruolo_colore(g_rm)
 
             card_html = (
