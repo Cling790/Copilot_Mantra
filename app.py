@@ -563,7 +563,6 @@ if df is not None:
         acq_avv = {'P': 0, 'D': 0, 'C': 0, 'A': 0}
         
         for nome_v_lower in venduti_dict.keys():
-            # Cerca il giocatore ignorando maiuscole/minuscole e spazi
             riga_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_lower]
             if not riga_v.empty:
                 ruoli_v = str(riga_v.iloc[0][rm_col]).upper()
@@ -572,6 +571,9 @@ if df is not None:
                 elif any(r in ruoli_v for r in ['M', 'C']): acq_avv['C'] += 1
                 elif any(r in ruoli_v for r in ['W', 'T', 'A', 'PC']): acq_avv['A'] += 1
         # -----------------------------------------------------
+
+        # Troviamo la colonna della titolarità in anticipo per il calcolo degli affari
+        tit_col_name = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita']), None)
 
         # --- CREAZIONE DINAMICA DEL SET_OCCASIONI (Per filtro e contatore) ---
         set_occasioni = set()
@@ -594,6 +596,7 @@ if df is not None:
                 
                 if sat >= 0.40 and n_st >= 4:
                     set_occasioni.add(g_n)
+        # -------------------------------------------------------------------
         # -------------------------------------------------------------------
         # -----------------------------------------------------
         # ---------------------------------------------
