@@ -550,28 +550,28 @@ if df is not None:
 
             st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
         
-        # --- RECUPERO DATI ACQUISTI ---
+        # --- RECUPERO DATI ACQUISTI (Robusto) ---
         miei_list = st.session_state.get('miei_acquisti', [])
         altri_list = st.session_state.get('altri_acquisti', [])
         
-        miei_nomi = {a['nome']: a['prezzo'] for a in miei_list if isinstance(a, dict) and 'nome' in a}
-        venduti_dict = {a['nome']: a['prezzo'] for a in altri_list if isinstance(a, dict) and 'nome' in a}
+        miei_nomi = {str(a['nome']).strip().lower(): a['prezzo'] for a in miei_list if isinstance(a, dict) and 'nome' in a}
+        venduti_dict = {str(a['nome']).strip().lower(): a['prezzo'] for a in altri_list if isinstance(a, dict) and 'nome' in a}
         nomi_venduti_totali = set(miei_nomi.keys()).union(set(venduti_dict.keys()))
         
-        # --- CALCOLO SATURAZIONE MERCATO AVVERSARI ---
-        # Slot totali degli avversari (9 squadre)
+        # --- CALCOLO SATURAZIONE MERCATO AVVERSARI (Robusto) ---
         slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'A': 90}
         acq_avv = {'P': 0, 'D': 0, 'C': 0, 'A': 0}
         
-        # Contiamo quanti ne hanno già presi per ogni reparto
-        for nome_v in venduti_dict.keys():
-            riga_v = df[df[nome_col] == nome_v]
+        for nome_v_lower in venduti_dict.keys():
+            # Cerca il giocatore ignorando maiuscole/minuscole e spazi
+            riga_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_lower]
             if not riga_v.empty:
                 ruoli_v = str(riga_v.iloc[0][rm_col]).upper()
                 if 'POR' in ruoli_v or ruoli_v == 'P': acq_avv['P'] += 1
                 elif any(r in ruoli_v for r in ['DC', 'DD', 'DS', 'E', 'D']): acq_avv['D'] += 1
                 elif any(r in ruoli_v for r in ['M', 'C']): acq_avv['C'] += 1
                 elif any(r in ruoli_v for r in ['W', 'T', 'A', 'PC']): acq_avv['A'] += 1
+        # -----------------------------------------------------
         # ---------------------------------------------
         
         for _, row in df_pagina.iterrows():
@@ -639,7 +639,8 @@ if df is not None:
                     tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
             
            # 4. TAG AFFARE INTELLIGENTE (Saturazione >= 40% e 4 o 5 Stelle)
-            if g_nome not in nomi_venduti_totali:
+            g_nome_lower = str(g_nome).strip().lower()
+            if g_nome_lower not in nomi_venduti_totali:
                 # Capiamo il reparto del giocatore che stiamo valutando
                 ruoli_g = str(g_rm).upper()
                 rep_g = None
@@ -652,20 +653,13 @@ if df is not None:
                     # Calcolo percentuale slot riempiti dagli avversari
                     saturazione = acq_avv[rep_g] / slot_avversari[rep_g]
                     
-                    # Calcoliamo le stelle direttamente dal valore numerico della colonna
-                    num_stelle = 0
-                    if tit_col_name and pd.notna(row[tit_col_name]):
-                        val_t = str(row[tit_col_name]).strip()
-                        try:
-                            num_stelle = int(float(val_t.replace(',', '.')))
-                        except ValueError:
-                            num_stelle = 0
+                    # Conteggio diretto delle stelline dalla variabile 'stelle' già pronta sopra
+                    num_stelle = stelle.count('⭐')
 
-                    # Se il reparto è saturo almeno al 40% e il giocatore ha 4 o 5 stelle
+                    # Se il reparto è saturo almeno al 40% e ha 4 o 5 stelle
                     if saturazione >= 0.40 and num_stelle >= 4:
                         perc_sat = int(saturazione * 100)
                         tags_list.append(f'<span class="tag-micro tag-affare-style" title="Ruolo saturo al {perc_sat}% ({num_stelle} Stelle)">🔥 VERO AFFARE</span>')
-
             # 5. TAG TARGET / INTERESSE
             is_interesse = False
             int_col = next((c for c in df.columns if str(c).lower() in ['interesse', 'target', 'obiettivo']), None)
