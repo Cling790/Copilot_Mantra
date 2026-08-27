@@ -462,175 +462,84 @@ if df is not None:
                 if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
                     st.rerun()
 
-        # ------------------------------------------
+       # ------------------------------------------
         # 🔍 TAB 1: LISTONE & ASTA
         # ------------------------------------------
-    with tab_asta:
-    set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
-    num_occasioni = len(set_occasioni)
+        with tab_asta:
+            set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
+            num_occasioni = len(set_occasioni)
 
-    def reset_ruolo_callback():
-        st.session_state["filtro_ruolo_specifico"] = "Tutti"
+            def reset_ruolo_callback():
+                st.session_state["filtro_ruolo_specifico"] = "Tutti"
 
-    cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro, Dybala...")
+            cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro, Dybala...")
 
-    # --- FILTRO PER FASCIA ---
-    fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
-    scelta_fascia = "Tutte le fasce"
-    if fascia_col_filtro:
-        fasce_disponibili = sorted([str(x).strip() for x in df[fascia_col_filtro].dropna().unique() if str(x).strip() not in ['', '-']])
-        if fasce_disponibili:
-            scelta_fascia = st.selectbox("⭐ Filtra per Fascia:", ["Tutte le fasce"] + fasce_disponibili, key="filtro_fascia_selectbox")
-    # -------------------------
+            # --- FILTRO PER FASCIA ---
+            fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+            scelta_fascia = "Tutte le fasce"
+            if fascia_col_filtro:
+                fasce_disponibili = sorted([str(x).strip() for x in df[fascia_col_filtro].dropna().unique() if str(x).strip() not in ['', '-']])
+                if fasce_disponibili:
+                    scelta_fascia = st.selectbox("⭐ Filtra per Fascia:", ["Tutte le fasce"] + fasce_disponibili, key="filtro_fascia_selectbox")
+            # -------------------------
 
-    col_f1, col_f2 = st.columns(2)
-    with col_f1: 
-        macro_reparto = st.selectbox(
-            "🛡️ Reparto:", 
-            ["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti", "Attaccanti"], 
-            key="filtro_macro_reparto", 
-            on_change=reset_ruolo_callback
-        )
-    with col_f2:
-        opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
-        ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
+            col_f1, col_f2 = st.columns(2)
+            with col_f1: 
+                macro_reparto = st.selectbox(
+                    "🛡️ Reparto:", 
+                    ["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti", "Attaccanti"], 
+                    key="filtro_macro_reparto", 
+                    on_change=reset_ruolo_callback
+                )
+            with col_f2:
+                opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
+                ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
 
-    col_cb1, col_cb2 = st.columns(2)
-    with col_cb1: 
-        mostra_anche_venduti = st.checkbox("👁️ Mostra anche Venduti", value=False)
-    with col_cb2: 
-        label_checkbox = f"🔥 Solo Affari / Occasioni ({num_occasioni})" if num_occasioni > 0 else "🔥 Solo Affari / Occasioni"
-        solo_occasioni = st.checkbox(label_checkbox, value=False)
+            col_cb1, col_cb2 = st.columns(2)
+            with col_cb1: 
+                mostra_anche_venduti = st.checkbox("👁️ Mostra anche Venduti", value=False)
+            with col_cb2: 
+                label_checkbox = f"🔥 Solo Affari / Occasioni ({num_occasioni})" if num_occasioni > 0 else "🔥 Solo Affari / Occasioni"
+                solo_occasioni = st.checkbox(label_checkbox, value=False)
 
-    st.divider()
+            st.divider()
 
-    df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
-    
-    if solo_occasioni: 
-        df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
-    
-    # Applicazione del filtro fascia al dataframe
-    if scelta_fascia != "Tutte le fasce" and fascia_col_filtro:
-        df_filtrato = df_filtrato[df_filtrato[fascia_col_filtro].astype(str).str.strip().str.lower() == scelta_fascia.lower()]
-    
-    if macro_reparto != "Tutti": 
-        df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
-    if ruolo_specifico != "Tutti": 
-        df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo_specifico) + r'\b', case=False, na=False)]
-    if cerca_nome: 
-        df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
-    if nome_col in df_filtrato.columns: 
-        df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
+            df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
+            
+            if solo_occasioni: 
+                df_filtrato = df_filtrato[df_filtrato[nome_col].isin(set_occasioni)]
+            
+            # Applicazione del filtro fascia al dataframe
+            if scelta_fascia != "Tutte le fasce" and fascia_col_filtro:
+                df_filtrato = df_filtrato[df_filtrato[fascia_col_filtro].astype(str).str.strip().str.lower() == scelta_fascia.lower()]
+            
+            if macro_reparto != "Tutti": 
+                df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
+            if ruolo_specifico != "Tutti": 
+                df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo_specifico) + r'\b', case=False, na=False)]
+            if cerca_nome: 
+                df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
+            if nome_col in df_filtrato.columns: 
+                df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
 
-    tot_risultati = len(df_filtrato)
-    c_pag1, c_pag2 = st.columns(2)
-    with c_pag1: 
-        righe_per_pagina = st.selectbox("Righe per pagina:", [50, 100, 200, 500], index=0)
-    num_pagine = max(1, (tot_risultati // righe_per_pagina) + (1 if tot_risultati % righe_per_pagina > 0 else 0))
-    with c_pag2: 
-        pagina_corrente = st.number_input(f"Pagina (1 - {num_pagine}):", min_value=1, max_value=num_pagine, value=1, step=1) if num_pagine > 1 else 1
+            tot_risultati = len(df_filtrato)
+            c_pag1, c_pag2 = st.columns(2)
+            with c_pag1: 
+                righe_per_pagina = st.selectbox("Righe per pagina:", [50, 100, 200, 500], index=0)
+            num_pagine = max(1, (tot_risultati // righe_per_pagina) + (1 if tot_risultati % righe_per_pagina > 0 else 0))
+            with c_pag2: 
+                pagina_corrente = st.number_input(f"Pagina (1 - {num_pagine}):", min_value=1, max_value=num_pagine, value=1, step=1) if num_pagine > 1 else 1
 
-    start_idx = (pagina_corrente - 1) * righe_per_pagina
-    df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
+            start_idx = (pagina_corrente - 1) * righe_per_pagina
+            df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
 
-    st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
+            st.write(f"Mostrando **{len(df_pagina)}** di **{tot_risultati}** giocatori:")
             for _, row in df_pagina.iterrows():
                 g_nome = row[nome_col]
                 g_rm = str(row[rm_col]) if rm_col in row else "N/A"
                 g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
                 val_fvm = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
                 val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
-
-             
-                # 1. Gestione Titolarità (Robusta per qualsiasi formato numerico/stringa)
-                stelle = "-"
-                if tit_col and pd.notna(row[tit_col]):
-                    try:
-                        # Converte prima in float e poi in int per gestire correttamente "2", 2.0, ecc.
-                        tit_val = int(float(row[tit_col]))
-                        if 1 <= tit_val <= 5:
-                            stelle = "★" * tit_val + "☆" * (5 - tit_val)
-                    except (ValueError, TypeError):
-                        stelle = "-"
-                else:
-                    stelle = "-"
-
-                # 2. Gestione Fasce (Mappatura personalizzata)
-                fascia_testo = ""
-                if fascia_col and pd.notna(row[fascia_col]):
-                    val_f = str(row[fascia_col]).strip().upper()
-                    mappa_fasce = {
-                        'T': 'Top',
-                        'ST': 'Semi-top',
-                        '3': 'Terza',
-                        '4': 'Quarta',
-                        'SC': 'Scommessa',
-                        'TIT': 'Tit scarsi',
-                        'OUT': 'Outsider'
-                    }
-                    fascia_testo = mappa_fasce.get(val_f, val_f)
-
-                # 3. Assemblaggio dei Tag
-                tags_list = []
-                if val_qta is not None: 
-                    tags_list.append(f'<span class="tag-micro">Qt.a {val_qta}</span>')
-                
-                if fascia_testo and fascia_testo not in ['-', '']: 
-                    tags_list.append(f'<span class="tag-micro">{fascia_testo}</span>')
-                
-                # --- GESTIONE RIGORISTA AGGIORNATA PER LA "R" ---
-                if rig_col and pd.notna(row[rig_col]):
-                    val_rig = str(row[rig_col]).strip().upper()
-                    if val_rig in ['R', '⚽', 'SI', '1', 'RIGORISTA', 'RIG']:
-                        tags_list.append('<span class="tag-micro">⚽ Rig</span>')
-                # -----------------------------------------------
-                
-                if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
-                    for t in str(row[note_col]).split(','): 
-                        tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
-                
-                if g_nome in set_occasioni and g_nome not in nomi_venduti_totali: 
-                    tags_list.append('<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
-
-                # Gestione Obiettivo / Interesse (Target) con bersaglio
-                is_interesse = False
-                if interesse_col and pd.notna(row[interesse_col]):
-                    val_int = str(row[interesse_col]).strip().upper()
-                    if val_int in ['X', 'SI', 'SÌ', '1', 'TRUE', 'YES']:
-                        is_interesse = True
-
-                if is_interesse:
-                    tags_list.insert(0, '<span class="tag-micro tag-interesse-style">🎯 TARGET</span>')
-                
-                if g_nome in miei_nomi: 
-                    tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]} cr)</span>')
-                elif g_nome in venduti_dict: 
-                    tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]} cr)</span>')
-
-                tags_html = "".join(tags_list)
-                col_bg = get_ruolo_colore(g_rm)
-
-                card_html = (
-                    f'<div class="player-main-card">'
-                    f'  <div style="display: flex; align-items: center; gap: 4px; width: 100%;">'
-                    f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm}</div>'
-                    f'    <span class="player-name-text">{g_nome}</span>'
-                    f'    <span class="team-badge">{g_squadra}</span>'
-                    f'    <span class="stars-text">{stelle}</span>'
-                    f'    <div class="fvm-badge-right">{val_fvm} FVM</div>'
-                    f'  </div>'
-                    f'  <div style="display: flex; align-items: center; gap: 3px; flex-wrap: wrap;">'
-                    f'    {tags_html}'
-                    f'  </div>'
-                    f'</div>'
-                )
-                c_card, c_btn = st.columns([1, 1], vertical_alignment="center")
-                with c_card:
-                    st.markdown(card_html, unsafe_allow_html=True)
-                with c_btn:
-                    if st.button("⚡", key=f"btn_chiama_{g_nome}", use_container_width=True, help="Gestisci Giocatore"):
-                        mostra_modal_chiamata(row.to_dict())
-
         # ------------------------------------------
         # 📋 TAB 2: LA MIA ROSA
         # ------------------------------------------
