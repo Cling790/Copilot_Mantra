@@ -4,10 +4,10 @@ import re
 import json
 import os
 
-st.set_page_config(page_title="Fanta Copilot Mantra 2026/27", layout="wide")
+st.set_page_config(page_title="Fanta_Cop Mantra 2026/27", layout="wide")
 
 # ==========================================
-# 🎨 STILI CSS PERSONALIZZATI (MOBILE-FIRST OTTIMIZZATO)
+# 🎨 STILI CSS PERSONALIZZATI (FIX HEADER MOBILE)
 # ==========================================
 st.markdown("""
 <style>
@@ -15,19 +15,51 @@ st.markdown("""
 .main .block-container {
     padding-left: 8px !important;
     padding-right: 8px !important;
-    padding-top: 0.8rem !important;
+    padding-top: 0.6rem !important;
     max-width: 100vw !important;
     overflow-x: hidden !important;
 }
 
-/* 2. TITOLO COMPATTO PER MOBILE */
-h1 {
-    font-size: 20px !important;
+/* 2. FORZA L'HEADER A RIMANERE SEMPRE SUI UNA SOLA RIGA (MAI ACCAPO) */
+[data-testid="stHorizontalBlock"]:has(button:contains("Esci")) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 8px !important;
+    margin-bottom: 5px !important;
+}
+
+[data-testid="stHorizontalBlock"]:has(button:contains("Esci")) > [data-testid="stColumn"],
+[data-testid="stHorizontalBlock"]:has(button:contains("Esci")) > [data-testid="column"] {
+    min-width: 0 !important;
+}
+
+[data-testid="stHorizontalBlock"]:has(button:contains("Esci")) > [data-testid="stColumn"]:nth-child(1),
+[data-testid="stHorizontalBlock"]:has(button:contains("Esci")) > [data-testid="column"]:nth-child(1) {
+    flex: 1 1 auto !important;
+}
+
+[data-testid="stHorizontalBlock"]:has(button:contains("Esci")) > [data-testid="stColumn"]:nth-child(2),
+[data-testid="stHorizontalBlock"]:has(button:contains("Esci")) > [data-testid="column"]:nth-child(2) {
+    flex: 0 0 85px !important;
+    width: 85px !important;
+}
+
+/* TITOLO COMPATTO MOBILE */
+.app-title {
+    font-size: 17px !important;
     font-weight: 800 !important;
-    line-height: 1.2 !important;
+    color: #ffffff !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
     margin: 0 !important;
     padding: 0 !important;
-    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
 }
 
 /* 3. GAP VERTICALI CONTENUTI */
@@ -62,7 +94,6 @@ h1 {
     max-width: 42px !important;
 }
 
-/* DISABILITA MIN-WIDTH GENERALE SULLE COLONNE */
 [data-testid="stColumn"], [data-testid="column"] {
     min-width: 0 !important;
 }
@@ -74,8 +105,8 @@ div.stButton {
 }
 
 div.stButton > button {
-    min-height: 40px !important; 
-    font-size: 15px !important;  
+    min-height: 38px !important; 
+    font-size: 14px !important;  
     padding: 0px !important;
     margin: 0px !important;
     border-radius: 6px !important;
@@ -95,7 +126,7 @@ div.stButton > button {
     overflow: hidden !important; 
 }
 
-/* Badge Ruolo Adattivo (Capsula) */
+/* Badge Ruolo Adattivo */
 .role-circle {
     min-width: 28px; 
     height: 18px; 
@@ -169,7 +200,7 @@ div.stButton > button {
     background-color: #2e3039 !important; 
     color: #b0b0b0 !important; 
     border-radius: 6px !important; 
-    padding: 6px 10px !important; 
+    padding: 5px 8px !important; 
     font-size: 11px !important; 
     border: none !important; 
     white-space: nowrap !important;
@@ -370,11 +401,11 @@ def calcola_occasioni(df_completo, tutti_venduti):
     return set_occasioni
 
 # ==========================================
-# 🖥️ HEADER COMPATTO PER MOBILE
+# 🖥️ HEADER COMPATTO PER MOBILE (FISSO SU UN'UNICA RIGA)
 # ==========================================
 col_head1, col_head2 = st.columns([3.2, 0.8], vertical_alignment="center")
 with col_head1: 
-    st.markdown("<h1>⚽ Fanta Copilot <span style='font-size:12px; color:#3b82f6;'>Mantra</span></h1>", unsafe_allow_html=True)
+    st.markdown('<div class="app-title">⚽ Fanta_Cop <span style="font-size:11px; color:#3b82f6; font-weight:600;">Mantra</span></div>', unsafe_allow_html=True)
 with col_head2:
     if st.button("🔒 Esci", use_container_width=True):
         st.session_state.autenticato = False
