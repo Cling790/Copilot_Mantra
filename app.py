@@ -463,7 +463,7 @@ if df is not None:
         tit_col = next((c for c in colonne if str(c).lower() in ['titolarità', 'titolarita', 'tit', 'status']), None)
         fascia_col = next((c for c in colonne if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
         note_col = next((c for c in colonne if str(c).lower() in ['note', 'caratteristiche', 'skill']), None)
-        miei_nomi = {p['Nome']: p['Prezzo'] for p in st.session_state.rosa}
+        miei_nomi = {str(p['Nome']).strip().lower(): p['Prezzo'] for p in st.session_state.rosa}
         venduti_dict = {str(v['Nome']).strip().lower(): v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
         c_infl = coeff_inflazione
