@@ -401,7 +401,7 @@ def calcola_occasioni(df_completo, tutti_venduti):
                     try: n_st_glob = int(float(str(r_f[tit_col_glob]).replace(',', '.')))
                     except (ValueError, TypeError): n_st_glob = 0
                 
-                if sat_glob >= 0.40 and n_st_glob >= 4:
+                if sat_glob >= 0.33 and n_st_glob >= 4:
                     set_occasioni.add(g_n_lower)
                     
     return set_occasioni
@@ -498,7 +498,7 @@ if df is not None:
                 txt_scarsita = f" | Sat. Reparto: **{sat:.0f}%**"
 
                 # Generazione Consiglio basata sulla Saturazione e sul Valore del giocatore
-                if sat >= 40:
+                if sat >= 33:
                     # Se il FVM è alto (es. >= 10) è un buon giocatore, altrimenti è un rincalzo
                     if v_base >= 10: 
                         txt_consiglio = "🔥 **OCCASIONE:** Reparto in forte saturazione e buon giocatore libero. Rilancia fino al prezzo consigliato!"
