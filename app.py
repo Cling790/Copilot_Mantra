@@ -463,15 +463,17 @@ if df is not None:
         tit_col = next((c for c in colonne if str(c).lower() in ['titolarità', 'titolarita', 'tit', 'status']), None)
         fascia_col = next((c for c in colonne if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
         note_col = next((c for c in colonne if str(c).lower() in ['note', 'caratteristiche', 'skill']), None)
-        miei_nomi = {str(p['Nome']).strip().lower(): p['Prezzo'] for p in st.session_state.rosa}
-        venduti_dict = {str(v['Nome']).strip().lower(): v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
+        miei_nomi = {p['Nome']: p['Prezzo'] for p in st.session_state.rosa}
+        venduti_dict = {v['Nome']: v['Prezzo'] for v in st.session_state.tutti_venduti if not v.get('Mio', False)}
         nomi_venduti_totali = list(miei_nomi.keys()) + list(venduti_dict.keys())
         c_infl = coeff_inflazione
 
         slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'TA': 90}
         acq_avv = {'P': 0, 'D': 0, 'C': 0, 'TA': 0}
-        for nome_v_l in venduti_dict.keys():
-            r_v = df[df[nome_col].astype(str).str.strip().str.lower() == nome_v_l]
+        
+        # Facciamo il confronto convertendo in minuscolo SOLO al momento della ricerca nel DataFrame
+        for nome_v in venduti_dict.keys():
+            r_v = df[df[nome_col].astype(str).str.strip().str.lower() == str(nome_v).strip().lower()]
             if not r_v.empty:
                 rep_v = ottieni_reparto_principale(str(r_v.iloc[0][rm_col]))
                 if rep_v in acq_avv: acq_avv[rep_v] += 1
