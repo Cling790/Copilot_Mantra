@@ -476,7 +476,7 @@ if df is not None:
                 rep_v = ottieni_reparto_principale(str(r_v.iloc[0][rm_col]))
                 if rep_v in acq_avv: acq_avv[rep_v] += 1
 
-        # MODIFICA 2: Pop-up di chiamata con dati tattici (Inflazione + Scarsità)
+       # MODIFICA 2: Pop-up di chiamata con dati tattici (Inflazione + Scarsità + Consigli)
         @st.dialog("⚡ Gestione Asta")
         def mostra_modal_chiamata(g_sel):
             gn = g_sel[nome_col]
@@ -485,16 +485,37 @@ if df is not None:
             v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1.0
             p_stim = max(1, round(v_base * c_infl))
 
+            # Calcolo Saturazione
             rep_p = ottieni_reparto_principale(grm)
             txt_scarsita = ""
+            txt_consiglio = ""
+            sat = 0
+
             if rep_p and rep_p in slot_avversari and slot_avversari[rep_p] > 0:
                 sat = (acq_avv[rep_p] / slot_avversari[rep_p]) * 100
                 txt_scarsita = f" | Sat. Reparto: **{sat:.0f}%**"
 
+                # Generazione Consiglio basata sulla Saturazione e sul Valore del giocatore
+                if sat >= 40:
+                    # Se il FVM è alto (es. >= 10) è un buon giocatore, altrimenti è un rincalzo
+                    if v_base >= 10: 
+                        txt_consiglio = "🔥 **OCCASIONE:** Reparto in forte saturazione e buon giocatore libero. Rilancia fino al prezzo consigliato!"
+                    else:
+                        txt_consiglio = "⚠️ **ATTENZIONE:** Reparto saturo. Evita di strapagare questo profilo di fascia bassa."
+                else:
+                    txt_consiglio = "💡 **CONSIGLIO:** Reparto ancora freddo. Cerca di chiamarlo a base d'asta o a un prezzo molto contenuto."
+
+            # Stampa l'intestazione
             st.markdown(f"### **{gn}** ({gsq} - `{grm}`) ")
             st.caption(f"FVM Base: **{int(v_base)}** | Consigliato: **{p_stim} cr** (Inflaz. {c_infl:.2f}x){txt_scarsita}")
+            
+            # Stampa il consiglio tattico (appare solo se il reparto è stato riconosciuto)
+            if txt_consiglio:
+                st.info(txt_consiglio)
+
             prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
             
+            # Pulsanti di acquisizione
             col_b1, col_b2, col_b3 = st.columns([1, 1, 1])
             with col_b1:
                 if st.button("✅ MIO", type="primary", use_container_width=True, key=f"btn_acq_{gn}"):
