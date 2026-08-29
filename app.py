@@ -578,7 +578,15 @@ if df is not None:
             if macro_reparto != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
             if ruolo_specifico != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo_specifico) + r'\b', case=False, na=False)]
             if cerca_nome: df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
-            if nome_col in df_filtrato.columns: df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
+            if nome_col in df_filtrato.columns: 
+                df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
+                
+                # --- AGGIUNGI QUESTO SOTTO ---
+                if 'lettera_partenza' in locals() and lettera_partenza != "A":
+                    mask = df_filtrato[nome_col].astype(str).str.upper() >= lettera_partenza
+                    df_filtrato = pd.concat([df_filtrato[mask], df_filtrato[~mask]]).reset_index(drop=True)
+                
+                st.session_state['coda_asta'] = df_filtrato[nome_col].tolist()
 
             tot_risultati = len(df_filtrato)
             c_pag1, c_pag2 = st.columns(2)
