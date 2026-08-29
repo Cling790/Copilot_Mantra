@@ -546,9 +546,9 @@ if df is not None:
 
             cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro...")
 
-    fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
-    scelta_fascia = "Tutte le fasce"
-    if fascia_col_filtro:
+        fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+        scelta_fascia = "Tutte le fasce"
+        if fascia_col_filtro:
         fasce_disponibili = sorted([str(x).strip() for x in df[fascia_col_filtro].dropna().unique() if str(x).strip() not in ['', '-']])
         if fasce_disponibili:
             mappa_fasce = {'t': 'Top', 'st': 'Semi-top', '3': 'Terza', '4': 'Quarta', 'sc': 'Scommessa', 'tit': 'Tit.scarsi', 'out': 'Outsider'}
