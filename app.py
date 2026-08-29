@@ -479,7 +479,6 @@ if df is not None:
     except Exception as e:
         st.error(f"Errore caricamento dati: {e}")
 
-# LA FUNZIONE DEVE ESSERE FUORI DAL BLOCCO IF (completamente a sinistra)
 @st.dialog("⚡ Gestione Asta")
 def mostra_modal_chiamata(nome_giocatore_iniziale):
     
@@ -566,232 +565,231 @@ def mostra_modal_chiamata(nome_giocatore_iniziale):
     with col_b4:
         if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
             st.rerun()
-        # ------------------------------------------
-        # 🔍 TAB 1: LISTONE & ASTA
-        # ------------------------------------------
-        with tab_asta:
-            set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
-            num_occasioni = len(set_occasioni)
 
-            def reset_ruolo_callback():
-                st.session_state["filtro_ruolo_specifico"] = "Tutti"
+if df is not None:
+    # ------------------------------------------
+    # 🔍 TAB 1: LISTONE & ASTA
+    # ------------------------------------------
+    with tab_asta:
+        set_occasioni = calcola_occasioni(df, st.session_state.tutti_venduti)
+        num_occasioni = len(set_occasioni)
 
-            cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro...")
+        def reset_ruolo_callback():
+            st.session_state["filtro_ruolo_specifico"] = "Tutti"
 
-            fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
-            scelta_fascia = "Tutte le fasce"
-            if fascia_col_filtro:
-                fasce_disponibili = sorted([str(x).strip() for x in df[fascia_col_filtro].dropna().unique() if str(x).strip() not in ['', '-']])
-                if fasce_disponibili:
-                    mappa_fasce = {'t': 'Top', 'st': 'Semi-top', '3': 'Terza', '4': 'Quarta', 'sc': 'Scommessa', 'tit': 'Tit.scarsi', 'out': 'Outsider'}
-                    scelta_fascia = st.selectbox("⭐ Fascia:", ["Tutte le fasce"] + fasce_disponibili, format_func=lambda x: mappa_fasce.get(str(x).lower(), x), key="filtro_fascia_selectbox")
+        cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro...")
 
-            col_f1, col_f2, col_f3 = st.columns([1.2, 1.2, 0.8])
-            with col_f1: 
-                macro_reparto = st.selectbox("🛡️ Reparto:", ["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti", "Attaccanti"], key="filtro_macro_reparto", on_change=reset_ruolo_callback)
-            with col_f2:
-                opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
-                ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
-            with col_f3:
-                lettera_partenza = st.selectbox("🔤 Inizia:", list(string.ascii_uppercase), key="filtro_lettera_partenza")
+        fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+        scelta_fascia = "Tutte le fasce"
+        if fascia_col_filtro:
+            fasce_disponibili = sorted([str(x).strip() for x in df[fascia_col_filtro].dropna().unique() if str(x).strip() not in ['', '-']])
+            if fasce_disponibili:
+                mappa_fasce = {'t': 'Top', 'st': 'Semi-top', '3': 'Terza', '4': 'Quarta', 'sc': 'Scommessa', 'tit': 'Tit.scarsi', 'out': 'Outsider'}
+                scelta_fascia = st.selectbox("⭐ Fascia:", ["Tutte le fasce"] + fasce_disponibili, format_func=lambda x: mappa_fasce.get(str(x).lower(), x), key="filtro_fascia_selectbox")
 
-            col_cb1, col_cb2 = st.columns(2)
-            with col_cb1: 
-                mostra_anche_venduti = st.checkbox("👁️ Mostra Venduti", value=False)
-            with col_cb2: 
-                label_checkbox = f"🔥 Affari ({num_occasioni})" if num_occasioni > 0 else "🔥 Affari"
-                solo_occasioni = st.checkbox(label_checkbox, value=False, key="solo_affari")
+        col_f1, col_f2, col_f3 = st.columns([1.2, 1.2, 0.8])
+        with col_f1: 
+            macro_reparto = st.selectbox("🛡️ Reparto:", ["Tutti", "Portieri", "Difensori", "Centrocampisti", "Trequartisti", "Attaccanti"], key="filtro_macro_reparto", on_change=reset_ruolo_callback)
+        with col_f2:
+            opzioni_ruoli = LISTA_RUOLI_MANTRA if macro_reparto == "Tutti" else ["Tutti"] + MAPPA_REPARTI.get(macro_reparto, [])
+            ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
+        with col_f3:
+            lettera_partenza = st.selectbox("🔤 Inizia:", list(string.ascii_uppercase), key="filtro_lettera_partenza")
+
+        col_cb1, col_cb2 = st.columns(2)
+        with col_cb1: 
+            mostra_anche_venduti = st.checkbox("👁️ Mostra Venduti", value=False)
+        with col_cb2: 
+            label_checkbox = f"🔥 Affari ({num_occasioni})" if num_occasioni > 0 else "🔥 Affari"
+            solo_occasioni = st.checkbox(label_checkbox, value=False, key="solo_affari")
+
+        st.divider()
+
+        df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
+        if solo_occasioni: df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.strip().str.lower().isin(set_occasioni)]
+        if scelta_fascia != "Tutte le fasce" and fascia_col_filtro: df_filtrato = df_filtrato[df_filtrato[fascia_col_filtro].astype(str).str.strip().str.lower() == scelta_fascia.lower()]
+        if macro_reparto != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
+        if ruolo_specifico != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo_specifico) + r'\b', case=False, na=False)]
+        if cerca_nome: df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
+        if nome_col in df_filtrato.columns: 
+            df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
+            
+            if 'lettera_partenza' in locals() and lettera_partenza != "A":
+                mask = df_filtrato[nome_col].astype(str).str.upper() >= lettera_partenza
+                df_filtrato = pd.concat([df_filtrato[mask], df_filtrato[~mask]]).reset_index(drop=True)
+            
+            st.session_state['coda_asta'] = df_filtrato[nome_col].tolist()
+
+        tot_risultati = len(df_filtrato)
+        c_pag1, c_pag2 = st.columns(2)
+        with c_pag1: righe_per_pagina = st.selectbox("Righe:", [50, 100, 200, 500], index=0)
+        num_pagine = max(1, (tot_risultati // righe_per_pagina) + (1 if tot_risultati % righe_per_pagina > 0 else 0))
+        with c_pag2: pagina_corrente = st.number_input(f"Pag (1-{num_pagine}):", min_value=1, max_value=num_pagine, value=1, step=1) if num_pagine > 1 else 1
+
+        start_idx = (pagina_corrente - 1) * righe_per_pagina
+        df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
+        st.caption(f"Trovati **{tot_risultati}** giocatori (Mostrati {len(df_pagina)})")
+
+        for _, row in df_pagina.iterrows():
+            g_nome = row[nome_col]
+            g_rm = str(row[rm_col]) if rm_col in row else "N/A"
+            g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
+            
+            fvm_base_num = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
+            val_fvm = int(round(fvm_base_num * c_infl))
+            
+            if abs(c_infl - 1.0) > 0.001:
+                fvm_display_html = f'<div class="fvm-badge-right" title="FVM Originario: {fvm_base_num}">{val_fvm} cr</div>'
+            else:
+                fvm_display_html = f'<div class="fvm-badge-right">{val_fvm} cr</div>'
+
+            val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
+
+            stelle = "-"
+            tit_col_name = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita']), None)
+            if tit_col_name and pd.notna(row[tit_col_name]):
+                val_t = str(row[tit_col_name]).strip()
+                if val_t and val_t not in ['', '-', 'nan']:
+                    try: stelle = "⭐" * int(float(val_t.replace(',', '.')))
+                    except ValueError: stelle = val_t
+
+            tags_list = []
+            fascia_c = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+            if fascia_c and pd.notna(row[fascia_c]) and str(row[fascia_c]).strip() not in ['', '-']:
+                val_fascia = str(row[fascia_c]).strip()
+                mappa_fasce = {'t': 'Top', 'st': 'Semi-top', '3': 'Terza', '4': 'Quarta', 'sc': 'Scommessa', 'tit': 'Tit.scarsi', 'out': 'Outsider'}
+                tags_list.append(f'<span class="tag-micro">{mappa_fasce.get(val_fascia.lower(), val_fascia)}</span>')
+                
+            if val_qta is not None: tags_list.append(f'<span class="tag-micro">Q:{val_qta}</span>')
+            if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
+                for t in str(row[note_col]).split(','): tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
+            
+            g_nome_lower = str(g_nome).strip().lower()
+            if g_nome_lower not in nomi_venduti_totali and g_nome_lower in set_occasioni:
+                tags_list.append(f'<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
+
+            int_col = next((c for c in df.columns if str(c).lower() in ['interesse', 'target', 'obiettivo']), None)
+            if int_col and pd.notna(row[int_col]) and str(row[int_col]).strip().upper() not in ['', '-', '0', 'FALSE']:
+                tags_list.insert(0, '<span class="tag-micro tag-interesse-style">🎯 TARGET</span>')
+            
+            if g_nome in miei_nomi: tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]}cr)</span>')
+            elif g_nome in venduti_dict: tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]}cr)</span>')
+
+            tags_html = "".join(tags_list)
+            col_bg = get_ruolo_colore(g_rm)
+
+            card_html = (
+                f'<div class="player-main-card">'
+                f'  <div style="display: flex; align-items: center; gap: 4px; width: 100%;">'
+                f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm}</div>'
+                f'    <span class="player-name-text">{g_nome}</span>'
+                f'    <span class="team-badge">{g_squadra}</span>'
+                f'    <span class="stars-text">{stelle}</span>'
+                f'    {fvm_display_html}'
+                f'  </div>'
+                f'  <div style="display: flex; align-items: center; gap: 3px; flex-wrap: wrap;">'
+                f'    {tags_html}'
+                f'  </div>'
+                f'</div>'
+            )
+            c_card, c_btn = st.columns([1, 1], vertical_alignment="center")
+            with c_card: st.markdown(card_html, unsafe_allow_html=True)
+            with c_btn:
+                if st.button("⚡", key=f"btn_chiama_{g_nome}", use_container_width=True, help="Gestisci"):
+                    mostra_modal_chiamata(g_nome)
+
+    # ------------------------------------------
+    # 📋 TAB 2: LA MIA ROSA
+    # ------------------------------------------
+    with tab_rosa:
+        st.subheader("📋 La Mia Rosa")
+        if st.session_state.rosa:
+            st.dataframe(pd.DataFrame(st.session_state.rosa), use_container_width=True)
+            st.divider()
+            st.markdown("### 🗑️ Svincola Giocatore")
+            col_del_r1, col_del_r2 = st.columns([3, 1])
+            with col_del_r1: giocatore_da_rimuovere = st.selectbox("Seleziona:", sorted([p["Nome"] for p in st.session_state.rosa]), key="sel_del_mio")
+            with col_del_r2:
+                st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
+                if st.button("❌ Rimuovi", type="primary", key="btn_del_mio", use_container_width=True): rimuovi_giocatore(giocatore_da_rimuovere)
 
             st.divider()
+            p_por = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Portieri']
+            p_dif = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Difensori']
+            p_cen = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Centrocampisti']
+            p_trq = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Trequartisti']
+            p_att = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Attaccanti']
+            
+            cols_r = st.columns(5)
+            cols_r[0].metric("POR", f"{len(p_por)}/4", f"{sum(p['Prezzo'] for p in p_por)}")
+            cols_r[1].metric("DIF", f"{len(p_dif)}/9", f"{sum(p['Prezzo'] for p in p_dif)}")
+            cols_r[2].metric("CEN", f"{len(p_cen)}/9", f"{sum(p['Prezzo'] for p in p_cen)}")
+            cols_r[3].metric("TRQ", f"{len(p_trq)}", f"{sum(p['Prezzo'] for p in p_trq)}")
+            cols_r[4].metric("ATT", f"{len(p_att)}", f"{sum(p['Prezzo'] for p in p_att)}")
+        else:
+            st.info("Nessun giocatore in rosa.")
 
-            df_filtrato = df.copy() if mostra_anche_venduti else df[~df[nome_col].isin(nomi_venduti_totali)].copy()
-            if solo_occasioni: df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.strip().str.lower().isin(set_occasioni)]
-            if scelta_fascia != "Tutte le fasce" and fascia_col_filtro: df_filtrato = df_filtrato[df_filtrato[fascia_col_filtro].astype(str).str.strip().str.lower() == scelta_fascia.lower()]
-            if macro_reparto != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].apply(lambda x: get_reparto(x) == macro_reparto)]
-            if ruolo_specifico != "Tutti": df_filtrato = df_filtrato[df_filtrato[rm_col].astype(str).str.contains(r'\b' + re.escape(ruolo_specifico) + r'\b', case=False, na=False)]
-            if cerca_nome: df_filtrato = df_filtrato[df_filtrato[nome_col].astype(str).str.lower().str.contains(cerca_nome.lower())]
-            if nome_col in df_filtrato.columns: 
-                df_filtrato = df_filtrato.sort_values(by=nome_col, key=lambda col: col.astype(str).str.lower(), ascending=True)
-                
-                # --- AGGIUNGI QUESTO SOTTO ---
-                if 'lettera_partenza' in locals() and lettera_partenza != "A":
-                    mask = df_filtrato[nome_col].astype(str).str.upper() >= lettera_partenza
-                    df_filtrato = pd.concat([df_filtrato[mask], df_filtrato[~mask]]).reset_index(drop=True)
-                
-                st.session_state['coda_asta'] = df_filtrato[nome_col].tolist()
-
-            tot_risultati = len(df_filtrato)
-            c_pag1, c_pag2 = st.columns(2)
-            with c_pag1: righe_per_pagina = st.selectbox("Righe:", [50, 100, 200, 500], index=0)
-            num_pagine = max(1, (tot_risultati // righe_per_pagina) + (1 if tot_risultati % righe_per_pagina > 0 else 0))
-            with c_pag2: pagina_corrente = st.number_input(f"Pag (1-{num_pagine}):", min_value=1, max_value=num_pagine, value=1, step=1) if num_pagine > 1 else 1
-
-            start_idx = (pagina_corrente - 1) * righe_per_pagina
-            df_pagina = df_filtrato.iloc[start_idx:start_idx + righe_per_pagina]
-            st.caption(f"Trovati **{tot_risultati}** giocatori (Mostrati {len(df_pagina)})")
-
-            for _, row in df_pagina.iterrows():
-                g_nome = row[nome_col]
-                g_rm = str(row[rm_col]) if rm_col in row else "N/A"
-                g_squadra = str(row[squadra_col])[:3].upper() if squadra_col in row else "SER"
-                
-                fvm_base_num = int(row[fvm_col]) if (fvm_col and pd.notna(row[fvm_col])) else 1
-                val_fvm = int(round(fvm_base_num * c_infl))
-                
-                if abs(c_infl - 1.0) > 0.001:
-                    fvm_display_html = f'<div class="fvm-badge-right" title="FVM Originario: {fvm_base_num}">{val_fvm} cr</div>'
-                else:
-                    fvm_display_html = f'<div class="fvm-badge-right">{val_fvm} cr</div>'
-
-                val_qta = int(row[qta_col]) if (qta_col and pd.notna(row[qta_col])) else None
-
-                stelle = "-"
-                tit_col_name = next((c for c in df.columns if str(c).strip().lower() in ['titolarità', 'titolarita']), None)
-                if tit_col_name and pd.notna(row[tit_col_name]):
-                    val_t = str(row[tit_col_name]).strip()
-                    if val_t and val_t not in ['', '-', 'nan']:
-                        try: stelle = "⭐" * int(float(val_t.replace(',', '.')))
-                        except ValueError: stelle = val_t
-
-                tags_list = []
-                fascia_c = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
-                if fascia_c and pd.notna(row[fascia_c]) and str(row[fascia_c]).strip() not in ['', '-']:
-                    val_fascia = str(row[fascia_c]).strip()
-                    mappa_fasce = {'t': 'Top', 'st': 'Semi-top', '3': 'Terza', '4': 'Quarta', 'sc': 'Scommessa', 'tit': 'Tit.scarsi', 'out': 'Outsider'}
-                    tags_list.append(f'<span class="tag-micro">{mappa_fasce.get(val_fascia.lower(), val_fascia)}</span>')
-                    
-                if val_qta is not None: tags_list.append(f'<span class="tag-micro">Q:{val_qta}</span>')
-                if note_col and pd.notna(row[note_col]) and str(row[note_col]).strip() not in ['-', '']:
-                    for t in str(row[note_col]).split(','): tags_list.append(f'<span class="tag-micro">{t.strip()}</span>')
-                
-                g_nome_lower = str(g_nome).strip().lower()
-                if g_nome_lower not in nomi_venduti_totali and g_nome_lower in set_occasioni:
-                    tags_list.append(f'<span class="tag-micro tag-affare-style">🔥 AFFARE</span>')
-
-                int_col = next((c for c in df.columns if str(c).lower() in ['interesse', 'target', 'obiettivo']), None)
-                if int_col and pd.notna(row[int_col]) and str(row[int_col]).strip().upper() not in ['', '-', '0', 'FALSE']:
-                    tags_list.insert(0, '<span class="tag-micro tag-interesse-style">🎯 TARGET</span>')
-                
-                if g_nome in miei_nomi: tags_list.insert(0, f'<span class="tag-micro tag-mio-style">MIO ({miei_nomi[g_nome]}cr)</span>')
-                elif g_nome in venduti_dict: tags_list.insert(0, f'<span class="tag-micro tag-venduto-style">VENDUTO ({venduti_dict[g_nome]}cr)</span>')
-
-                tags_html = "".join(tags_list)
-                col_bg = get_ruolo_colore(g_rm)
-
-                card_html = (
-                    f'<div class="player-main-card">'
-                    f'  <div style="display: flex; align-items: center; gap: 4px; width: 100%;">'
-                    f'    <div class="role-circle" style="background-color: {col_bg};">{g_rm}</div>'
-                    f'    <span class="player-name-text">{g_nome}</span>'
-                    f'    <span class="team-badge">{g_squadra}</span>'
-                    f'    <span class="stars-text">{stelle}</span>'
-                    f'    {fvm_display_html}'
-                    f'  </div>'
-                    f'  <div style="display: flex; align-items: center; gap: 3px; flex-wrap: wrap;">'
-                    f'    {tags_html}'
-                    f'  </div>'
-                    f'</div>'
-                )
-                c_card, c_btn = st.columns([1, 1], vertical_alignment="center")
-                with c_card: st.markdown(card_html, unsafe_allow_html=True)
-                with c_btn:
-                    if st.button("⚡", key=f"btn_chiama_{g_nome}", use_container_width=True, help="Gestisci"):
-                        mostra_modal_chiamata(row.to_dict())
-
-        # ------------------------------------------
-        # 📋 TAB 2: LA MIA ROSA
-        # ------------------------------------------
-        with tab_rosa:
-            st.subheader("📋 La Mia Rosa")
-            if st.session_state.rosa:
-                st.dataframe(pd.DataFrame(st.session_state.rosa), use_container_width=True)
-                st.divider()
-                st.markdown("### 🗑️ Svincola Giocatore")
-                col_del_r1, col_del_r2 = st.columns([3, 1])
-                with col_del_r1: giocatore_da_rimuovere = st.selectbox("Seleziona:", sorted([p["Nome"] for p in st.session_state.rosa]), key="sel_del_mio")
-                with col_del_r2:
+    # ------------------------------------------
+    # 🤝 TAB 3: TUTTI I VENDUTI
+    # ------------------------------------------
+    with tab_venduti:
+        st.subheader("🤝 Venduti Globali")
+        if st.session_state.tutti_venduti:
+            df_v = pd.DataFrame(st.session_state.tutti_venduti)
+            st.dataframe(df_v[["Nome", "Squadra", "RM", "Prezzo", "Mio"]], use_container_width=True)
+            st.divider()
+            cerca_venduto = st.text_input("🔎 Cerca venduto:", key="search_venduti")
+            lista_tutti = sorted([v["Nome"] for v in st.session_state.tutti_venduti])
+            if cerca_venduto: lista_tutti = [n for n in lista_tutti if cerca_venduto.lower() in n.lower()]
+            if lista_tutti:
+                col_del_v1, col_del_v2 = st.columns([3, 1])
+                with col_del_v1: giocatore_da_rimuovere_v = st.selectbox("Giocatore:", lista_tutti, key="sel_del_tutti")
+                with col_del_v2:
                     st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
-                    if st.button("❌ Rimuovi", type="primary", key="btn_del_mio", use_container_width=True): rimuovi_giocatore(giocatore_da_rimuovere)
+                    if st.button("❌ Annulla", type="primary", key="btn_del_tutti", use_container_width=True): rimuovi_giocatore(giocatore_da_rimuovere_v)
+        else:
+            st.info("Nessun giocatore venduto.")
 
-                st.divider()
-                p_por = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Portieri']
-                p_dif = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Difensori']
-                p_cen = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Centrocampisti']
-                p_trq = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Trequartisti']
-                p_att = [p for p in st.session_state.rosa if get_reparto(p['RM']) == 'Attaccanti']
-                
-                cols_r = st.columns(5)
-                cols_r[0].metric("POR", f"{len(p_por)}/4", f"{sum(p['Prezzo'] for p in p_por)}")
-                cols_r[1].metric("DIF", f"{len(p_dif)}/9", f"{sum(p['Prezzo'] for p in p_dif)}")
-                cols_r[2].metric("CEN", f"{len(p_cen)}/9", f"{sum(p['Prezzo'] for p in p_cen)}")
-                cols_r[3].metric("TRQ", f"{len(p_trq)}", f"{sum(p['Prezzo'] for p in p_trq)}")
-                cols_r[4].metric("ATT", f"{len(p_att)}", f"{sum(p['Prezzo'] for p in p_att)}")
-            else:
-                st.info("Nessun giocatore in rosa.")
+    # ------------------------------------------
+    # 🧩 TAB 4: ANALIZZATORE MODULI
+    # ------------------------------------------
+    with tab_moduli:
+        st.subheader("🧩 Moduli Mantra")
+        if not st.session_state.rosa:
+            st.warning("Acquista prima qualche giocatore.")
+        else:
+            ruoli_disponibili = {r: [] for r in LISTA_RUOLI_MANTRA[1:]}
+            for p in st.session_state.rosa:
+                for r_tok in [t.strip().upper() for t in re.split(r'[;,/\s]+', str(p.get('RM', '')))]:
+                    if r_tok in ruoli_disponibili: ruoli_disponibili[r_tok].append(p['Nome'])
 
-        # ------------------------------------------
-        # 🤝 TAB 3: TUTTI I VENDUTI
-        # ------------------------------------------
-        with tab_venduti:
-            st.subheader("🤝 Venduti Globali")
-            if st.session_state.tutti_venduti:
-                df_v = pd.DataFrame(st.session_state.tutti_venduti)
-                st.dataframe(df_v[["Nome", "Squadra", "RM", "Prezzo", "Mio"]], use_container_width=True)
-                st.divider()
-                cerca_venduto = st.text_input("🔎 Cerca venduto:", key="search_venduti")
-                lista_tutti = sorted([v["Nome"] for v in st.session_state.tutti_venduti])
-                if cerca_venduto: lista_tutti = [n for n in lista_tutti if cerca_venduto.lower() in n.lower()]
-                if lista_tutti:
-                    col_del_v1, col_del_v2 = st.columns([3, 1])
-                    with col_del_v1: giocatore_da_rimuovere_v = st.selectbox("Giocatore:", lista_tutti, key="sel_del_tutti")
-                    with col_del_v2:
-                        st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
-                        if st.button("❌ Annulla", type="primary", key="btn_del_tutti", use_container_width=True): rimuovi_giocatore(giocatore_da_rimuovere_v)
-            else:
-                st.info("Nessun giocatore venduto.")
+            def verifica_schema(schema_reqs, giocatori_rosa):
+                p_parsed = [{'Nome': p['Nome'], 'Ruoli': set([t.strip().upper() for t in re.split(r'[;,/\s]+', str(p.get('RM', '')))])} for p in giocatori_rosa]
+                usati = set()
+                def solve(slot_idx):
+                    if slot_idx == len(schema_reqs): return True
+                    for idx_p, p in enumerate(p_parsed):
+                        if idx_p not in usati and any(r in p['Ruoli'] for r in schema_reqs[slot_idx]):
+                            usati.add(idx_p)
+                            if solve(slot_idx + 1): return True
+                            usati.remove(idx_p)
+                    return False
+                slot_coperti, test_usati = 0, set()
+                for opzioni_ruolo in schema_reqs:
+                    for idx_p, p in enumerate(p_parsed):
+                        if idx_p not in test_usati and any(r in p['Ruoli'] for r in opzioni_ruolo):
+                            test_usati.add(idx_p); slot_coperti += 1; break
+                return solve(0), slot_coperti
 
-        # ------------------------------------------
-        # 🧩 TAB 4: ANALIZZATORE MODULI
-        # ------------------------------------------
-        with tab_moduli:
-            st.subheader("🧩 Moduli Mantra")
-            if not st.session_state.rosa:
-                st.warning("Acquista prima qualche giocatore.")
-            else:
-                ruoli_disponibili = {r: [] for r in LISTA_RUOLI_MANTRA[1:]}
-                for p in st.session_state.rosa:
-                    for r_tok in [t.strip().upper() for t in re.split(r'[;,/\s]+', str(p.get('RM', '')))]:
-                        if r_tok in ruoli_disponibili: ruoli_disponibili[r_tok].append(p['Nome'])
+            res_moduli = []
+            for mod_nome, reqs in SCHEMI_MANTRA.items():
+                is_ok, n_coperti = verifica_schema(reqs, st.session_state.rosa)
+                res_moduli.append({"Modulo": mod_nome, "Status": "🟢 OK" if is_ok else ("🟡 " + str(n_coperti) + "/11" if n_coperti >= 8 else "🔴 NO"), "Titolari": f"{n_coperti}/11", "Giocabile": is_ok})
 
-                def verifica_schema(schema_reqs, giocatori_rosa):
-                    p_parsed = [{'Nome': p['Nome'], 'Ruoli': set([t.strip().upper() for t in re.split(r'[;,/\s]+', str(p.get('RM', '')))])} for p in giocatori_rosa]
-                    usati = set()
-                    def solve(slot_idx):
-                        if slot_idx == len(schema_reqs): return True
-                        for idx_p, p in enumerate(p_parsed):
-                            if idx_p not in usati and any(r in p['Ruoli'] for r in schema_reqs[slot_idx]):
-                                usati.add(idx_p)
-                                if solve(slot_idx + 1): return True
-                                usati.remove(idx_p)
-                        return False
-                    slot_coperti, test_usati = 0, set()
-                    for opzioni_ruolo in schema_reqs:
-                        for idx_p, p in enumerate(p_parsed):
-                            if idx_p not in test_usati and any(r in p['Ruoli'] for r in opzioni_ruolo):
-                                test_usati.add(idx_p); slot_coperti += 1; break
-                    return solve(0), slot_coperti
+            st.dataframe(pd.DataFrame(res_moduli)[["Modulo", "Status", "Titolari"]], use_container_width=True, hide_index=True)
+            moduli_ok = [m["Modulo"] for m in res_moduli if m["Giocabile"]]
+            if moduli_ok: st.success(f"🎉 **Completati:** {', '.join(moduli_ok)}")
 
-                res_moduli = []
-                for mod_nome, reqs in SCHEMI_MANTRA.items():
-                    is_ok, n_coperti = verifica_schema(reqs, st.session_state.rosa)
-                    res_moduli.append({"Modulo": mod_nome, "Status": "🟢 OK" if is_ok else ("🟡 " + str(n_coperti) + "/11" if n_coperti >= 8 else "🔴 NO"), "Titolari": f"{n_coperti}/11", "Giocabile": is_ok})
-
-                st.dataframe(pd.DataFrame(res_moduli)[["Modulo", "Status", "Titolari"]], use_container_width=True, hide_index=True)
-                moduli_ok = [m["Modulo"] for m in res_moduli if m["Giocabile"]]
-                if moduli_ok: st.success(f"🎉 **Completati:** {', '.join(moduli_ok)}")
-
-    except Exception as e:
-        st.error(f"Errore: {e}")
 else:
     st.info("👈 **Nessun Listone trovato su GitHub o caricato!**\n\nCarica il file `.xlsx` o `.csv` dalla barra laterale a sinistra, oppure verifica di aver caricato il file Excel/CSV nella cartella del repository.")
 
