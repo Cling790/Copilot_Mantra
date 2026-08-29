@@ -471,7 +471,6 @@ if df is not None:
         slot_avversari = {'P': 36, 'D': 81, 'C': 81, 'TA': 90}
         acq_avv = {'P': 0, 'D': 0, 'C': 0, 'TA': 0}
         
-        # Calcolo saturazione
         for nome_v in venduti_dict.keys():
             r_v = df[df[nome_col].astype(str).str.strip().str.lower() == str(nome_v).strip().lower()]
             if not r_v.empty:
