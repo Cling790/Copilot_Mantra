@@ -602,7 +602,7 @@ def mostra_modal_chiamata():
         st.caption(f"📊 **Progresso Minimi:** Rosa {totale_miei}/23 | Portieri {portieri_miei}/2")
     # --------------------
 
-   # Gestione Prezzo con pulsanti rapidi + casella di testo sicura
+   # Gestione Prezzo con pulsanti rapidi stabili
     st.write("Prezzo Finale:")
     
     key_num = f"val_prezzo_{gn}"
@@ -615,12 +615,14 @@ def mostra_modal_chiamata():
             st.session_state[key_num] = max(1, st.session_state[key_num] - 1)
             st.rerun()
     with col_p2:
-        prezzo_input = st.number_input("Valore", min_value=1, value=st.session_state[key_num], label_visibility="collapsed", key=f"num_inp_{gn}")
-        st.session_state[key_num] = prezzo_input
+        # Mostriamo il valore in modo pulito e centrato senza widget in conflitto
+        st.markdown(f"<h3 style='text-align: center; margin: 0;'>{st.session_state[key_num]} cr</h3>", unsafe_allow_html=True)
     with col_p3:
         if st.button("➕ 1", use_container_width=True, key=f"add_{gn}"):
             st.session_state[key_num] += 1
             st.rerun()
+
+    prezzo_input = st.session_state[key_num]
 
     st.markdown("---")
     
@@ -647,7 +649,6 @@ def mostra_modal_chiamata():
         if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
             st.session_state['dialog_open'] = False
             st.rerun()
-
 # Assicurati di mantenere anche questa chiamata a fine script
 if st.session_state.get('dialog_open', False):
     mostra_modal_chiamata()
