@@ -480,21 +480,13 @@ if df is not None:
         st.error(f"Errore caricamento dati: {e}")
 
 @st.dialog("⚡ Gestione Asta")
-def mostra_modal_chiamata(nome_giocatore_iniziale):
-    
-    # 1. Gestione dell'indice del carosello
-    if 'dialog_trigger' not in st.session_state or st.session_state.get('dialog_trigger') != nome_giocatore_iniziale:
-        try:
-            st.session_state['current_player_idx'] = st.session_state['coda_asta'].index(nome_giocatore_iniziale)
-        except (ValueError, KeyError):
-            st.session_state['current_player_idx'] = 0
-        st.session_state['dialog_trigger'] = nome_giocatore_iniziale
-
+def mostra_modal_chiamata():
     current_idx = st.session_state.get('current_player_idx', 0)
     
     if 'coda_asta' in st.session_state and current_idx >= len(st.session_state['coda_asta']):
         st.warning("🏁 Lista giocatori terminata!")
-        if st.button("❌ Chiudi"):
+        if st.button("❌ Chiudi", key="btn_close_end"):
+            st.session_state['dialog_open'] = False
             st.rerun()
         return
 
@@ -505,7 +497,8 @@ def mostra_modal_chiamata(nome_giocatore_iniziale):
     g_sel_row = df[df[nome_col].astype(str).str.lower() == str(nome_giocatore).lower()]
     if g_sel_row.empty:
         st.error(f"Giocatore {nome_giocatore} non trovato.")
-        if st.button("❌ Chiudi"):
+        if st.button("❌ Chiudi", key="btn_close_err"):
+            st.session_state['dialog_open'] = False
             st.rerun()
         return
     g_sel = g_sel_row.iloc[0]
@@ -543,7 +536,7 @@ def mostra_modal_chiamata(nome_giocatore_iniziale):
 
     prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
     
-    # 2. I 4 Pulsanti aggiornati per il carosello continuo
+    # I 4 Pulsanti per il carosello continuo
     col_b1, col_b2, col_b3, col_b4 = st.columns(4)
     with col_b1:
         if st.button("✅ MIO", type="primary", use_container_width=True, key=f"btn_acq_{gn}"):
@@ -564,7 +557,10 @@ def mostra_modal_chiamata(nome_giocatore_iniziale):
             st.rerun()
     with col_b4:
         if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
+            st.session_state['dialog_open'] = False
             st.rerun()
+if st.session_state.get('dialog_open', False):
+    mostra_modal_chiamata()           
 
 if df is not None:
     # ------------------------------------------
@@ -696,7 +692,12 @@ if df is not None:
             with c_card: st.markdown(card_html, unsafe_allow_html=True)
             with c_btn:
                 if st.button("⚡", key=f"btn_chiama_{g_nome}", use_container_width=True, help="Gestisci"):
-                    mostra_modal_chiamata(g_nome)
+                    st.session_state['dialog_open'] = True
+                    try:
+                        st.session_state['current_player_idx'] = st.session_state['coda_asta'].index(g_nome)
+                    except (ValueError, KeyError):
+                        st.session_state['current_player_idx'] = 0
+                    st.rerun()
 
     # ------------------------------------------
     # 📋 TAB 2: LA MIA ROSA
