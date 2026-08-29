@@ -508,8 +508,20 @@ def mostra_modal_chiamata():
     gsq = str(g_sel[squadra_col])[:3].upper() if squadra_col in g_sel else "-"
     v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1.0
 
-    # 🌡️ Calcolo Termometro dell'Inflazione per Ruolo
     rep_p = ottieni_reparto_principale(grm)
+
+    # 🚨 1. CONTROLLO TUOI SLOT (Valori esatti: 4, 9, 9, 10)
+    limiti_miei = {"P": 4, "D": 9, "C": 9, "TA": 10}
+    max_miei = limiti_miei.get(rep_p, 99)
+    miei_nel_ruolo = len([x for x in st.session_state.rosa if ottieni_reparto_principale(x.get('RM', '')) == rep_p])
+
+    # 🚨 2. CONTROLLO SLOT AVVERSARI (Hanno tutti finito?)
+    avv_completati = False
+    if rep_p and rep_p in slot_avversari and slot_avversari[rep_p] > 0:
+        if acq_avv[rep_p] >= slot_avversari[rep_p]:
+            avv_completati = True
+
+    # 🌡️ Calcolo Termometro dell'Inflazione per Ruolo
     venduti_ruolo = [
         v for v in st.session_state.tutti_venduti 
         if ottieni_reparto_principale(v.get('RM', '')) == rep_p and v.get('FVM', 0) > 0
@@ -537,12 +549,21 @@ def mostra_modal_chiamata():
         else:
             txt_consiglio = "Reparto freddo • Punta a base d'asta"
 
-    # Stampa l'intestazione (discreta)
+    # Stampa l'intestazione
     st.markdown(f"### **{gn}** ({gsq} - `{grm}`) ")
     st.caption(f"FVM: **{int(v_base)}** | Consigliato: **{p_stim} cr** (Infl. {rep_p}: {infl_ruolo:.2f}x){txt_scarsita}")
     
     if txt_consiglio:
         st.caption(f"ℹ️ {txt_consiglio}")
+
+    # --- ALERT VISIVI ---
+    if miei_nel_ruolo >= max_miei:
+        st.error(f"🛑 **REPARTO COMPLETO!** Hai già {miei_nel_ruolo}/{max_miei} giocatori in questo ruolo ({rep_p}).")
+        
+    if avv_completati:
+        st.success(f"🏆 **AVVERSARI PIENI!** Nessuno ha più slot ({acq_avv[rep_p]}/{slot_avversari[rep_p]}). Chiamalo a 1 credito!")
+        p_stim = 1
+    # --------------------
 
     prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
     
@@ -571,7 +592,7 @@ def mostra_modal_chiamata():
             st.rerun()
 
 if st.session_state.get('dialog_open', False):
-    mostra_modal_chiamata()          
+    mostra_modal_chiamata()
 
 if df is not None:
     # ------------------------------------------
