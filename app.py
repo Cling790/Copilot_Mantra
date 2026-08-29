@@ -480,60 +480,91 @@ if df is not None:
 
        # MODIFICA 2: Pop-up di chiamata con dati tattici (Inflazione + Scarsità + Consigli)
         @st.dialog("⚡ Gestione Asta")
-        def mostra_modal_chiamata(g_sel):
-            gn = g_sel[nome_col]
-            grm = str(g_sel[rm_col])
-            gsq = str(g_sel[squadra_col])[:3].upper() if squadra_col in g_sel else "-"
-            v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1.0
-            p_stim = max(1, round(v_base * c_infl))
+def mostra_modal_chiamata(nome_giocatore_iniziale):
+    
+    # 1. Gestione dell'indice del carosello
+    if 'dialog_trigger' not in st.session_state or st.session_state.get('dialog_trigger') != nome_giocatore_iniziale:
+        try:
+            st.session_state['current_player_idx'] = st.session_state['coda_asta'].index(nome_giocatore_iniziale)
+        except (ValueError, KeyError):
+            st.session_state['current_player_idx'] = 0
+        st.session_state['dialog_trigger'] = nome_giocatore_iniziale
 
-            # Calcolo Saturazione
-            rep_p = ottieni_reparto_principale(grm)
-            txt_scarsita = ""
-            txt_consiglio = ""
-            sat = 0
+    current_idx = st.session_state.get('current_player_idx', 0)
+    
+    if 'coda_asta' in st.session_state and current_idx >= len(st.session_state['coda_asta']):
+        st.warning("🏁 Lista giocatori terminata!")
+        if st.button("❌ Chiudi"):
+            st.rerun()
+        return
 
-            if rep_p and rep_p in slot_avversari and slot_avversari[rep_p] > 0:
-                sat = (acq_avv[rep_p] / slot_avversari[rep_p]) * 100
-                txt_scarsita = f" | Sat. Reparto: **{sat:.0f}%**"
+    # Il nome del giocatore attivo nel carosello
+    nome_giocatore = st.session_state['coda_asta'][current_idx]
+    
+    # Recupera la riga corrispondente dal dataframe principale
+    g_sel_row = df[df[nome_col].astype(str).str.lower() == str(nome_giocatore).lower()]
+    if g_sel_row.empty:
+        st.error(f"Giocatore {nome_giocatore} non trovato.")
+        if st.button("❌ Chiudi"):
+            st.rerun()
+        return
+    g_sel = g_sel_row.iloc[0]
 
-                # Generazione Consiglio basata sulla Saturazione e sul Valore del giocatore
-                if sat >= 33:
-                    # Se il FVM è alto (es. >= 10) è un buon giocatore, altrimenti è un rincalzo
-                    if v_base >= 10: 
-                        txt_consiglio = "🔥 **OCCASIONE:** Reparto in forte saturazione e buon giocatore libero. Rilancia fino al prezzo consigliato!"
-                    else:
-                        txt_consiglio = "⚠️ **ATTENZIONE:** Reparto saturo. Evita di strapagare questo profilo di fascia bassa."
-                else:
-                    txt_consiglio = "💡 **CONSIGLIO:** Reparto ancora freddo. Cerca di chiamarlo a base d'asta o a un prezzo molto contenuto."
+    gn = g_sel[nome_col]
+    grm = str(g_sel[rm_col])
+    gsq = str(g_sel[squadra_col])[:3].upper() if squadra_col in g_sel else "-"
+    v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1.0
+    p_stim = max(1, round(v_base * c_infl))
 
-            # Stampa l'intestazione
-            st.markdown(f"### **{gn}** ({gsq} - `{grm}`) ")
-            st.caption(f"FVM Base: **{int(v_base)}** | Consigliato: **{p_stim} cr** (Inflaz. {c_infl:.2f}x){txt_scarsita}")
-            
-            # Stampa il consiglio tattico (appare solo se il reparto è stato riconosciuto)
-            if txt_consiglio:
-                st.info(txt_consiglio)
+    # Calcolo Saturazione
+    rep_p = ottieni_reparto_principale(grm)
+    txt_scarsita = ""
+    txt_consiglio = ""
+    sat = 0
 
-            prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
-            
-            # Pulsanti di acquisizione
-            col_b1, col_b2, col_b3 = st.columns([1, 1, 1])
-            with col_b1:
-                if st.button("✅ MIO", type="primary", use_container_width=True, key=f"btn_acq_{gn}"):
-                    st.session_state.rosa.append({"Nome": gn, "Squadra": gsq, "RM": grm, "Prezzo": prezzo_input})
-                    st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": True})
-                    salva_backup()
-                    st.rerun()
-            with col_b2:
-                if st.button("📌 ALTRI", use_container_width=True, key=f"btn_vend_{gn}"):
-                    st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
-                    salva_backup()
-                    st.rerun()
-            with col_b3:
-                if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
-                    st.rerun()
+    if rep_p and rep_p in slot_avversari and slot_avversari[rep_p] > 0:
+        sat = (acq_avv[rep_p] / slot_avversari[rep_p]) * 100
+        txt_scarsita = f" | Sat. Reparto: **{sat:.0f}%**"
 
+        if sat >= 33:
+            if v_base >= 10: 
+                txt_consiglio = "🔥 **OCCASIONE:** Reparto in forte saturazione e buon giocatore libero. Rilancia fino al prezzo consigliato!"
+            else:
+                txt_consiglio = "⚠️ **ATTENZIONE:** Reparto saturo. Evita di strapagare questo profilo di fascia bassa."
+        else:
+            txt_consiglio = "💡 **CONSIGLIO:** Reparto ancora freddo. Cerca di chiamarlo a base d'asta o a un prezzo molto contenuto."
+
+    # Stampa l'intestazione
+    st.markdown(f"### **{gn}** ({gsq} - `{grm}`) ")
+    st.caption(f"FVM Base: **{int(v_base)}** | Consigliato: **{p_stim} cr** (Inflaz. {c_infl:.2f}x){txt_scarsita}")
+    
+    if txt_consiglio:
+        st.info(txt_consiglio)
+
+    prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
+    
+    # 2. I 4 Pulsanti aggiornati per il carosello continuo
+    col_b1, col_b2, col_b3, col_b4 = st.columns(4)
+    with col_b1:
+        if st.button("✅ MIO", type="primary", use_container_width=True, key=f"btn_acq_{gn}"):
+            st.session_state.rosa.append({"Nome": gn, "Squadra": gsq, "RM": grm, "Prezzo": prezzo_input})
+            st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": True})
+            salva_backup()
+            st.session_state['current_player_idx'] += 1
+            st.rerun()
+    with col_b2:
+        if st.button("📌 ALTRI", use_container_width=True, key=f"btn_vend_{gn}"):
+            st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
+            salva_backup()
+            st.session_state['current_player_idx'] += 1
+            st.rerun()
+    with col_b3:
+        if st.button("⏭️ PASSO", use_container_width=True, key=f"btn_passo_{gn}"):
+            st.session_state['current_player_idx'] += 1
+            st.rerun()
+    with col_b4:
+        if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
+            st.rerun()
         # ------------------------------------------
         # 🔍 TAB 1: LISTONE & ASTA
         # ------------------------------------------
