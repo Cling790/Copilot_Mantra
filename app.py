@@ -481,26 +481,36 @@ if df is not None:
 
 @st.dialog("⚡ Gestione Asta")
 def mostra_modal_chiamata():
+    # --- 🛡️ CONTROLLI DI SICUREZZA ANTI-CRASH ---
+    if 'coda_asta' not in st.session_state or not st.session_state['coda_asta']:
+        st.warning("⚠️ Nessun giocatore in coda! Aggiungi dei giocatori prima di aprire l'asta.")
+        return
+    if 'rosa' not in st.session_state:
+        st.session_state.rosa = []
+    if 'tutti_venduti' not in st.session_state:
+        st.session_state.tutti_venduti = []
+    # ----------------------------------------------
+
     current_idx = st.session_state.get('current_player_idx', 0)
     
-    if 'coda_asta' in st.session_state and current_idx >= len(st.session_state['coda_asta']):
+    if current_idx >= len(st.session_state['coda_asta']):
         st.warning("🏁 Lista giocatori terminata!")
         if st.button("❌ Chiudi", key="btn_close_end"):
             st.session_state['dialog_open'] = False
             st.rerun()
         return
 
-    # Il nome del giocatore attivo nel carosello
+    # Recupero giocatore
     nome_giocatore = st.session_state['coda_asta'][current_idx]
     
-    # Recupera la riga corrispondente dal dataframe principale
     g_sel_row = df[df[nome_col].astype(str).str.lower() == str(nome_giocatore).lower()]
     if g_sel_row.empty:
-        st.error(f"Giocatore {nome_giocatore} non trovato.")
+        st.error(f"Giocatore {nome_giocatore} non trovato nel database.")
         if st.button("❌ Chiudi", key="btn_close_err"):
             st.session_state['dialog_open'] = False
             st.rerun()
         return
+        
     g_sel = g_sel_row.iloc[0]
 
     gn = g_sel[nome_col]
@@ -523,10 +533,10 @@ def mostra_modal_chiamata():
     # 🚨 2. CONTROLLO SLOT AVVERSARI (Hanno tutti finito?)
     avv_completati = False
     if rep_p and rep_p in slot_avversari and slot_avversari[rep_p] > 0:
-        if acq_avv[rep_p] >= slot_avversari[rep_p]:
+        if acq_avv.get(rep_p, 0) >= slot_avversari[rep_p]:
             avv_completati = True
 
-    # 🌡️ Calcolo Termometro dell'Inflazione per Ruolo
+    # 🌡️ Termometro Inflazione
     venduti_ruolo = [
         v for v in st.session_state.tutti_venduti 
         if ottieni_reparto_principale(v.get('RM', '')) == rep_p and v.get('FVM', 0) > 0
@@ -543,7 +553,7 @@ def mostra_modal_chiamata():
     sat = 0
 
     if rep_p and rep_p in slot_avversari and slot_avversari[rep_p] > 0:
-        sat = (acq_avv[rep_p] / slot_avversari[rep_p]) * 100
+        sat = (acq_avv.get(rep_p, 0) / slot_avversari[rep_p]) * 100
         txt_scarsita = f" | Sat: **{sat:.0f}%**"
 
         if sat >= 33:
@@ -554,7 +564,7 @@ def mostra_modal_chiamata():
         else:
             txt_consiglio = "Reparto freddo • Punta a base d'asta"
 
-    # Stampa l'intestazione
+    # Intestazione Popup
     st.markdown(f"### **{gn}** ({gsq} - `{grm}`) ")
     st.caption(f"FVM: **{int(v_base)}** | Consigliato: **{p_stim} cr** (Infl. {rep_p}: {infl_ruolo:.2f}x){txt_scarsita}")
     
@@ -568,7 +578,7 @@ def mostra_modal_chiamata():
         
     # Alert Verde: Avversari finiti
     if avv_completati:
-        st.success(f"🏆 **AVVERSARI PIENI!** Nessuno ha più slot ({acq_avv[rep_p]}/{slot_avversari[rep_p]}). Chiamalo a 1 credito!")
+        st.success(f"🏆 **AVVERSARI PIENI!** Nessuno ha più slot ({acq_avv.get(rep_p, 0)}/{slot_avversari[rep_p]}). Chiamalo a 1 credito!")
         p_stim = 1
         
     # Banner Minimi: Progresso e Conferma
@@ -580,7 +590,7 @@ def mostra_modal_chiamata():
 
     prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
     
-    # I 4 Pulsanti per il carosello continuo
+    # I 4 Pulsanti
     col_b1, col_b2, col_b3, col_b4 = st.columns(4)
     with col_b1:
         if st.button("✅ MIO", type="primary", use_container_width=True, key=f"btn_acq_{gn}"):
@@ -603,6 +613,10 @@ def mostra_modal_chiamata():
         if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
             st.session_state['dialog_open'] = False
             st.rerun()
+
+# Assicurati di mantenere anche questa chiamata a fine script
+if st.session_state.get('dialog_open', False):
+    mostra_modal_chiamata()
 if df is not None:
     # ------------------------------------------
     # 🔍 TAB 1: LISTONE & ASTA
