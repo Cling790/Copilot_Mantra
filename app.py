@@ -615,14 +615,12 @@ def mostra_modal_chiamata():
             st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": True})
             salva_backup()
             st.session_state['current_player_idx'] += 1
-            st.session_state['dialog_open'] = False
             st.rerun()
     with col_b2:
         if st.button("📌 ALTRI", use_container_width=True, key=f"btn_vend_{gn}"):
             st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
             salva_backup()
             st.session_state['current_player_idx'] += 1
-            st.session_state['dialog_open'] = False
             st.rerun()
     with col_b3:
         if st.button("⏭️ PASSO", use_container_width=True, key=f"btn_passo_{gn}"):
