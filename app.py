@@ -521,11 +521,11 @@ def mostra_modal_chiamata():
 
         if sat >= 33:
             if v_base >= 10: 
-                txt_consiglio = "🔥 **OCCASIONE:** Reparto in forte saturazione e buon giocatore libero. Rilancia fino al prezzo consigliato!"
+                txt_consiglio = "Reparto caldo • Valuta rilancio"
             else:
-                txt_consiglio = "⚠️ **ATTENZIONE:** Reparto saturo. Evita di strapagare questo profilo di fascia bassa."
+                txt_consiglio = "Reparto saturo • Evita sovrapprezzo"
         else:
-            txt_consiglio = "💡 **CONSIGLIO:** Reparto ancora freddo. Cerca di chiamarlo a base d'asta o a un prezzo molto contenuto."
+            txt_consiglio = "Reparto freddo • Punta a base d'asta"
 
     # Stampa l'intestazione
     st.markdown(f"### **{gn}** ({gsq} - `{grm}`) ")
