@@ -546,7 +546,7 @@ if df is not None:
 
             cerca_nome = st.text_input("🔎 Cerca Nome:", key="filtro_cerca_nome", placeholder="Es. Lautaro...")
 
-            fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
+           fascia_col_filtro = next((c for c in df.columns if str(c).lower() in ['fascia', 'fasce', 'tier']), None)
     scelta_fascia = "Tutte le fasce"
     if fascia_col_filtro:
         fasce_disponibili = sorted([str(x).strip() for x in df[fascia_col_filtro].dropna().unique() if str(x).strip() not in ['', '-']])
@@ -562,12 +562,13 @@ if df is not None:
         ruolo_specifico = st.selectbox("🎯 Ruolo:", opzioni_ruoli, key="filtro_ruolo_specifico")
     with col_f3:
         lettera_partenza = st.selectbox("🔤 Inizia:", list(string.ascii_uppercase), key="filtro_lettera_partenza")
-            col_cb1, col_cb2 = st.columns(2)
-            with col_cb1: 
-                mostra_anche_venduti = st.checkbox("👁️ Mostra Venduti", value=False)
-            with col_cb2: 
-                label_checkbox = f"🔥 Affari ({num_occasioni})" if num_occasioni > 0 else "🔥 Affari"
-                solo_occasioni = st.checkbox(label_checkbox, value=False, key="solo_affari")
+
+    col_cb1, col_cb2 = st.columns(2)
+    with col_cb1: 
+        mostra_anche_venduti = st.checkbox("👁️ Mostra Venduti", value=False)
+    with col_cb2: 
+        label_checkbox = f"🔥 Affari ({num_occasioni})" if num_occasioni > 0 else "🔥 Affari"
+        solo_occasioni = st.checkbox(label_checkbox, value=False, key="solo_affari")
 
             st.divider()
 
