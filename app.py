@@ -520,7 +520,7 @@ def mostra_modal_chiamata():
 
     # 🌟 Recupero opzionale di Fascia / Note / Micro-tag se presenti nel tuo df
     # (Sostituisci 'Fascia' con il nome reale della colonna nel tuo excel se è diverso)
-    fascia_gioc = str(g_sel.get('Fascia', '')) if 'Fascia' in g_sel else ""
+    fascia_gioc = str(g_sel.get('Fasce', '')) if 'Fasce' in g_sel else ""
     
     rep_p = ottieni_reparto_principale(grm)
 
