@@ -602,8 +602,28 @@ def mostra_modal_chiamata():
         st.caption(f"📊 **Progresso Minimi:** Rosa {totale_miei}/23 | Portieri {portieri_miei}/2")
     # --------------------
 
-    prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
+   # Gestione Prezzo con pulsanti rapidi + casella di testo sicura
+    st.write("Prezzo Finale:")
+    
+    key_num = f"val_prezzo_{gn}"
+    if key_num not in st.session_state:
+        st.session_state[key_num] = int(p_stim)
+
+    col_p1, col_p2, col_p3 = st.columns([1, 2, 1])
+    with col_p1:
+        if st.button("➖ 1", use_container_width=True, key=f"sub_{gn}"):
+            st.session_state[key_num] = max(1, st.session_state[key_num] - 1)
+            st.rerun()
+    with col_p2:
+        prezzo_input = st.number_input("Valore", min_value=1, value=st.session_state[key_num], label_visibility="collapsed", key=f"num_inp_{gn}")
+        st.session_state[key_num] = prezzo_input
+    with col_p3:
+        if st.button("➕ 1", use_container_width=True, key=f"add_{gn}"):
+            st.session_state[key_num] += 1
+            st.rerun()
+
     st.markdown("---")
+    
     # I 4 Pulsanti
     col_b1, col_b2, col_b3, col_b4 = st.columns(4)
     with col_b1:
