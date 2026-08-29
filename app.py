@@ -510,10 +510,15 @@ def mostra_modal_chiamata():
 
     rep_p = ottieni_reparto_principale(grm)
 
-    # 🚨 1. CONTROLLO TUOI SLOT (Valori esatti: 4, 9, 9, 10)
-    limiti_miei = {"P": 4, "D": 9, "C": 9, "TA": 10}
-    max_miei = limiti_miei.get(rep_p, 99)
+    # 🚨 1. CONTROLLO TUOI SLOT (Limiti Massimi Rigidi)
+    limiti_miei_max = {"P": 4, "D": 9, "C": 9, "TA": 10}
+    max_miei = limiti_miei_max.get(rep_p, 99)
+    
     miei_nel_ruolo = len([x for x in st.session_state.rosa if ottieni_reparto_principale(x.get('RM', '')) == rep_p])
+    
+    # Conteggi per i limiti minimi
+    totale_miei = len(st.session_state.rosa)
+    portieri_miei = len([x for x in st.session_state.rosa if ottieni_reparto_principale(x.get('RM', '')) == 'P'])
 
     # 🚨 2. CONTROLLO SLOT AVVERSARI (Hanno tutti finito?)
     avv_completati = False
@@ -557,12 +562,20 @@ def mostra_modal_chiamata():
         st.caption(f"ℹ️ {txt_consiglio}")
 
     # --- ALERT VISIVI ---
+    # Alert Rosso: Blocco massimi
     if miei_nel_ruolo >= max_miei:
-        st.error(f"🛑 **REPARTO COMPLETO!** Hai già {miei_nel_ruolo}/{max_miei} giocatori in questo ruolo ({rep_p}).")
+        st.error(f"🛑 **REPARTO COMPLETO!** Hai già raggiunto il limite massimo di {max_miei} per il ruolo {rep_p}.")
         
+    # Alert Verde: Avversari finiti
     if avv_completati:
         st.success(f"🏆 **AVVERSARI PIENI!** Nessuno ha più slot ({acq_avv[rep_p]}/{slot_avversari[rep_p]}). Chiamalo a 1 credito!")
         p_stim = 1
+        
+    # Banner Minimi: Progresso e Conferma
+    if totale_miei >= 23 and portieri_miei >= 2:
+        st.success("✅ **Requisiti Minimi OK:** Hai raggiunto almeno 23 giocatori totali e 2 portieri in rosa.")
+    else:
+        st.caption(f"📊 **Progresso Minimi:** Rosa {totale_miei}/23 | Portieri {portieri_miei}/2")
     # --------------------
 
     prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
@@ -590,10 +603,6 @@ def mostra_modal_chiamata():
         if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
             st.session_state['dialog_open'] = False
             st.rerun()
-
-if st.session_state.get('dialog_open', False):
-    mostra_modal_chiamata()
-
 if df is not None:
     # ------------------------------------------
     # 🔍 TAB 1: LISTONE & ASTA
