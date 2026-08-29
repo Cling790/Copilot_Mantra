@@ -603,7 +603,7 @@ def mostra_modal_chiamata():
     # --------------------
 
     prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
-    
+    st.markdown("---")
     # I 4 Pulsanti
     col_b1, col_b2, col_b3, col_b4 = st.columns(4)
     with col_b1:
