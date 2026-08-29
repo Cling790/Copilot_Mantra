@@ -518,10 +518,17 @@ def mostra_modal_chiamata():
     gsq = str(g_sel[squadra_col])[:3].upper() if squadra_col in g_sel else "-"
     v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1.0
 
-    # 🌟 Recupero opzionale di Fascia / Note / Micro-tag se presenti nel tuo df
-    # (Sostituisci 'Fascia' con il nome reale della colonna nel tuo excel se è diverso)
+    # 🌟 Lettura di Fasce e Titolarità (da 1 a 5)
     fascia_gioc = str(g_sel.get('Fasce', '')) if 'Fasce' in g_sel else ""
     
+    tit_val = g_sel.get('Titolarità', 0)
+    try:
+        # Se il valore è un numero, creiamo le stelline corrispondenti (es. 4 -> ⭐⭐⭐⭐)
+        num_stelle = int(float(tit_val)) if pd.notna(tit_val) else 0
+        stelle_gioc = "⭐" * num_stelle if num_stelle > 0 else ""
+    except (ValueError, TypeError):
+        stelle_gioc = str(tit_val) if pd.notna(tit_val) else ""
+
     rep_p = ottieni_reparto_principale(grm)
 
     # 🚨 1. CONTROLLO TUOI SLOT (Limiti Massimi Rigidi)
@@ -568,10 +575,11 @@ def mostra_modal_chiamata():
         else:
             txt_consiglio = "Reparto freddo • Punta a base d'asta"
 
-    # Intestazione Popup con Fascia / Micro-tag
+    # Intestazione Popup con Fascia e Stelline basate sulla Titolarità
     badge_fascia = f" • 🏷️ {fascia_gioc}" if fascia_gioc and fascia_gioc != 'nan' and fascia_gioc != '' else ""
+    badge_stelle = f" • {stelle_gioc}" if stelle_gioc and stelle_gioc != 'nan' and stelle_gioc != '' else ""
     
-    st.markdown(f"### **{gn}** ({gsq} - `{grm}`){badge_fascia}")
+    st.markdown(f"### **{gn}** ({gsq} - `{grm}`){badge_fascia}{badge_stelle}")
     st.caption(f"FVM: **{int(v_base)}** | Consigliato: **{p_stim} cr** (Infl. {rep_p}: {infl_ruolo:.2f}x){txt_scarsita}")
     
     if txt_consiglio:
