@@ -507,17 +507,27 @@ def mostra_modal_chiamata():
     grm = str(g_sel[rm_col])
     gsq = str(g_sel[squadra_col])[:3].upper() if squadra_col in g_sel else "-"
     v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1.0
-    p_stim = max(1, round(v_base * c_infl))
+
+    # 🌡️ Calcolo Termometro dell'Inflazione per Ruolo
+    rep_p = ottieni_reparto_principale(grm)
+    venduti_ruolo = [
+        v for v in st.session_state.tutti_venduti 
+        if ottieni_reparto_principale(v.get('RM', '')) == rep_p and v.get('FVM', 0) > 0
+    ]
+    spesa_tot_ruolo = sum(v['Prezzo'] for v in venduti_ruolo)
+    fvm_tot_ruolo = sum(v['FVM'] for v in venduti_ruolo)
+    
+    infl_ruolo = (spesa_tot_ruolo / fvm_tot_ruolo) if fvm_tot_ruolo > 0 else c_infl
+    p_stim = max(1, round(v_base * infl_ruolo))
 
     # Calcolo Saturazione
-    rep_p = ottieni_reparto_principale(grm)
     txt_scarsita = ""
     txt_consiglio = ""
     sat = 0
 
     if rep_p and rep_p in slot_avversari and slot_avversari[rep_p] > 0:
         sat = (acq_avv[rep_p] / slot_avversari[rep_p]) * 100
-        txt_scarsita = f" | Sat. Reparto: **{sat:.0f}%**"
+        txt_scarsita = f" | Sat: **{sat:.0f}%**"
 
         if sat >= 33:
             if v_base >= 10: 
@@ -527,12 +537,12 @@ def mostra_modal_chiamata():
         else:
             txt_consiglio = "Reparto freddo • Punta a base d'asta"
 
-    # Stampa l'intestazione
+    # Stampa l'intestazione (discreta)
     st.markdown(f"### **{gn}** ({gsq} - `{grm}`) ")
-    st.caption(f"FVM Base: **{int(v_base)}** | Consigliato: **{p_stim} cr** (Inflaz. {c_infl:.2f}x){txt_scarsita}")
+    st.caption(f"FVM: **{int(v_base)}** | Consigliato: **{p_stim} cr** (Infl. {rep_p}: {infl_ruolo:.2f}x){txt_scarsita}")
     
     if txt_consiglio:
-        st.info(txt_consiglio)
+        st.caption(f"ℹ️ {txt_consiglio}")
 
     prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
     
@@ -559,8 +569,9 @@ def mostra_modal_chiamata():
         if st.button("❌ CHIUDI", use_container_width=True, key=f"btn_close_{gn}"):
             st.session_state['dialog_open'] = False
             st.rerun()
+
 if st.session_state.get('dialog_open', False):
-    mostra_modal_chiamata()           
+    mostra_modal_chiamata()          
 
 if df is not None:
     # ------------------------------------------
