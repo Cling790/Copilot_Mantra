@@ -602,31 +602,12 @@ def mostra_modal_chiamata():
         st.caption(f"📊 **Progresso Minimi:** Rosa {totale_miei}/23 | Portieri {portieri_miei}/2")
     # --------------------
 
-   # Gestione Prezzo con pulsanti rapidi stabili
-    st.write("Prezzo Finale:")
-    
-    key_num = f"val_prezzo_{gn}"
-    if key_num not in st.session_state:
-        st.session_state[key_num] = int(p_stim)
-
-    col_p1, col_p2, col_p3 = st.columns([1, 2, 1])
-    with col_p1:
-        if st.button("➖ 1", use_container_width=True, key=f"sub_{gn}"):
-            st.session_state[key_num] = max(1, st.session_state[key_num] - 1)
-            st.rerun()
-    with col_p2:
-        # Mostriamo il valore in modo pulito e centrato senza widget in conflitto
-        st.markdown(f"<h3 style='text-align: center; margin: 0;'>{st.session_state[key_num]} cr</h3>", unsafe_allow_html=True)
-    with col_p3:
-        if st.button("➕ 1", use_container_width=True, key=f"add_{gn}"):
-            st.session_state[key_num] += 1
-            st.rerun()
-
-    prezzo_input = st.session_state[key_num]
+   # Gestione Prezzo con il number_input nativo e stabile
+    prezzo_input = st.number_input("Prezzo Finale:", min_value=1, value=int(p_stim), key=f"p_input_{gn}")
 
     st.markdown("---")
     
-    # I 4 Pulsanti
+    # I 4 Pulsanti dell'Asta
     col_b1, col_b2, col_b3, col_b4 = st.columns(4)
     with col_b1:
         if st.button("✅ MIO", type="primary", use_container_width=True, key=f"btn_acq_{gn}"):
@@ -634,12 +615,14 @@ def mostra_modal_chiamata():
             st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": True})
             salva_backup()
             st.session_state['current_player_idx'] += 1
+            st.session_state['dialog_open'] = False
             st.rerun()
     with col_b2:
         if st.button("📌 ALTRI", use_container_width=True, key=f"btn_vend_{gn}"):
             st.session_state.tutti_venduti.append({"Nome": gn, "Squadra": gsq, "RM": grm, "FVM": v_base, "Prezzo": prezzo_input, "Mio": False})
             salva_backup()
             st.session_state['current_player_idx'] += 1
+            st.session_state['dialog_open'] = False
             st.rerun()
     with col_b3:
         if st.button("⏭️ PASSO", use_container_width=True, key=f"btn_passo_{gn}"):
