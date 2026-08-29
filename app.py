@@ -479,7 +479,7 @@ if df is not None:
                 if rep_v in acq_avv: acq_avv[rep_v] += 1
 
        # MODIFICA 2: Pop-up di chiamata con dati tattici (Inflazione + Scarsità + Consigli)
-        @st.dialog("⚡ Gestione Asta")
+@st.dialog("⚡ Gestione Asta")
 def mostra_modal_chiamata(nome_giocatore_iniziale):
     
     # 1. Gestione dell'indice del carosello
