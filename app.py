@@ -518,6 +518,10 @@ def mostra_modal_chiamata():
     gsq = str(g_sel[squadra_col])[:3].upper() if squadra_col in g_sel else "-"
     v_base = float(g_sel[fvm_col]) if (fvm_col and pd.notna(g_sel[fvm_col])) else 1.0
 
+    # 🌟 Recupero opzionale di Fascia / Note / Micro-tag se presenti nel tuo df
+    # (Sostituisci 'Fascia' con il nome reale della colonna nel tuo excel se è diverso)
+    fascia_gioc = str(g_sel.get('Fascia', '')) if 'Fascia' in g_sel else ""
+    
     rep_p = ottieni_reparto_principale(grm)
 
     # 🚨 1. CONTROLLO TUOI SLOT (Limiti Massimi Rigidi)
@@ -564,8 +568,10 @@ def mostra_modal_chiamata():
         else:
             txt_consiglio = "Reparto freddo • Punta a base d'asta"
 
-    # Intestazione Popup
-    st.markdown(f"### **{gn}** ({gsq} - `{grm}`) ")
+    # Intestazione Popup con Fascia / Micro-tag
+    badge_fascia = f" • 🏷️ {fascia_gioc}" if fascia_gioc and fascia_gioc != 'nan' and fascia_gioc != '' else ""
+    
+    st.markdown(f"### **{gn}** ({gsq} - `{grm}`){badge_fascia}")
     st.caption(f"FVM: **{int(v_base)}** | Consigliato: **{p_stim} cr** (Infl. {rep_p}: {infl_ruolo:.2f}x){txt_scarsita}")
     
     if txt_consiglio:
